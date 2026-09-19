@@ -388,6 +388,7 @@ a { color: inherit; }
 .cd-photo img { width: 100%; height: 100%; object-fit: cover; }
 .cd-title { font-size: 19px; font-weight: 800; }
 .cd-flavor { font-size: 13.5px; color: var(--anthracite-soft); margin-top: 2px; margin-bottom: 6px; }
+.cd-actions { display: flex; justify-content: center; gap: 10px; margin: 10px 0 16px; flex-wrap: wrap; }
 
 .criteria-bars { text-align: left; margin: 18px 0; }
 .cbar-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
@@ -891,6 +892,11 @@ const Store = {
     await this._fetchAll();
     if (!this._state.degustateurs.length) {
       await this._seedDefaultTasters();
+      // Un autre appareil a peut-être semé les mêmes dégustateurs au même
+      // instant (deux téléphones ouverts en même temps) : on recharge
+      // depuis le serveur pour repartir de l'état réel, dédoublonné par
+      // la contrainte unique côté base (voir migration SQL).
+      await this._fetchAll();
     }
     this._subscribeRealtime();
     this._ready = true;
@@ -1003,7 +1009,10 @@ const Store = {
       isDemo: false, createdAt: new Date().toISOString()
     }));
     this._state.degustateurs.push(...rows);
-    await this._client.from(TABLES.degustateurs).insert(rows);
+    // upsert + ignoreDuplicates : si un autre appareil a déjà semé les
+    // mêmes noms (contrainte unique sur "nom" côté base), cette écriture
+    // ne crée pas de doublon plutôt que d'échouer.
+    await this._client.from(TABLES.degustateurs).upsert(rows, { onConflict: "nom", ignoreDuplicates: true });
   },
 
   /* ---------- Dégustateurs ---------- */
@@ -1013,7 +1022,7 @@ const Store = {
     if (existing) return existing;
     const d = { id: uid("taster"), nom, avatarEmoji: avatarEmoji || pickAvatar(nom), isDemo: false, createdAt: new Date().toISOString() };
     this._state.degustateurs.push(d);
-    this._bg(() => this._client.from(TABLES.degustateurs).insert([d]), "addDegustateur");
+    this._bg(() => this._client.from(TABLES.degustateurs).upsert([d], { onConflict: "nom", ignoreDuplicates: true }), "addDegustateur");
     return d;
   },
   getDegustateur(id) { return this._state.degustateurs.find((d) => d.id === id); },
@@ -1072,6 +1081,22 @@ const Store = {
   },
   getChips() { return this._state.chips; },
   getChip(id) { return this._state.chips.find((c) => c.id === id); },
+  updateChip(id, patch) {
+    const c = this._state.chips.find((x) => x.id === id);
+    if (!c) return null;
+    Object.assign(c, patch);
+    this._bg(() => this._client.from(TABLES.chips).update(patch).eq("id", id), "updateChip");
+    return c;
+  },
+  // Supprime le paquet ainsi que sa/ses dégustation(s) et notes associées
+  // (cascade gérée côté base, mais on nettoie aussi le cache local tout de suite).
+  deleteChip(id) {
+    const degIds = this._state.degustations.filter((d) => d.chipId === id).map((d) => d.id);
+    this._state.chips = this._state.chips.filter((c) => c.id !== id);
+    this._state.degustations = this._state.degustations.filter((d) => d.chipId !== id);
+    this._state.notes = this._state.notes.filter((n) => !degIds.includes(n.degustationId));
+    this._bg(() => this._client.from(TABLES.chips).delete().eq("id", id), "deleteChip");
+  },
 
   /* ---------- Dégustations (chips x soirée) ---------- */
   addDegustation(deg) {
@@ -1090,6 +1115,13 @@ const Store = {
       this._bg(() => this._client.from(TABLES.degustations).update({ revele: true }).eq("id", id), "revelerDegustation");
     }
     return d;
+  },
+  // Supprime une dégustation (un "test" d'un paquet lors d'une soirée) et
+  // ses notes, sans supprimer la fiche du paquet lui-même.
+  deleteDegustation(id) {
+    this._state.degustations = this._state.degustations.filter((d) => d.id !== id);
+    this._state.notes = this._state.notes.filter((n) => n.degustationId !== id);
+    this._bg(() => this._client.from(TABLES.degustations).delete().eq("id", id), "deleteDegustation");
   },
 
   /* ---------- Notes individuelles ---------- */
@@ -1705,6 +1737,7 @@ const App = {
     if (parts[0] === "soiree" && parts[1]) return this.renderSoireeRecap(parts[1]);
     if (parts[0] === "soirees") return this.renderSoireesList();
     if (parts[0] === "chips") return this.renderChipsList();
+    if (parts[0] === "chip" && parts[1] && parts[2] === "edit") return this.renderEditChip(parts[1]);
     if (parts[0] === "chip" && parts[1]) return this.renderChipDetail(parts[1]);
     if (parts[0] === "note" && parts[1] && parts[2] === "edit") return this.renderEditNote(parts[1]);
     if (parts[0] === "classement") return this.renderClassement();
@@ -2473,6 +2506,11 @@ const App = {
           <div class="cd-title">${escapeHTML(chip.marque)} ${chip.nomCommercial ? "— " + escapeHTML(chip.nomCommercial) : ""}</div>
           <div class="cd-flavor">${escapeHTML(chip.saveurLabel)} ${chip.gamme ? "· " + escapeHTML(chip.gamme) : ""}</div>
 
+          <div class="cd-actions">
+            <button class="btn btn-small btn-ghost" onclick="location.hash='#/chip/${chip.id}/edit'">✏️ Modifier le paquet</button>
+            <button class="btn btn-small btn-danger" onclick="App.confirmDeleteChip('${chip.id}')">🗑️ Supprimer</button>
+          </div>
+
           ${row && row.note != null ? `
           <div class="reveal-note anim-pop small">${fmt(row.note)}<span>/10</span></div>
           <div class="reveal-verdict">${row.verdict.emoji} ${row.verdict.label}</div>
@@ -2521,6 +2559,170 @@ const App = {
       ${this.bottomNav()}
       ${this.sideMenu()}
     `;
+  },
+
+  /* ============================================================
+     MODIFIER / SUPPRIMER UN PAQUET
+     ============================================================ */
+  confirmDeleteChip(chipId) {
+    const chip = Store.getChip(chipId);
+    if (!chip) return;
+    const label = `${chip.marque}${chip.nomCommercial ? " — " + chip.nomCommercial : ""}`;
+    if (!confirm(`Supprimer « ${label} » ? Cette action supprime aussi sa dégustation et toutes les notes associées, pour tout le monde.`)) return;
+    Store.deleteChip(chipId);
+    location.hash = "#/chips";
+    this.route();
+  },
+
+  renderEditChip(chipId) {
+    this.setNav("chips");
+    const chip = Store.getChip(chipId);
+    if (!chip) return this.renderChipsList();
+    this._pendingPhoto = null;
+    const allSaveurs = Store.getAllSaveurs();
+    const allFamilles = Store.getAllFamilles();
+    const saveursByFamille = {};
+    allSaveurs.forEach((s) => {
+      const fam = labelOf(FAMILLES_SAVEUR, s.familleId, "Autre");
+      saveursByFamille[fam] = saveursByFamille[fam] || [];
+      saveursByFamille[fam].push(s);
+    });
+
+    $app().innerHTML = `
+      ${this.header("Modifier le paquet", true, `#/chip/${chip.id}`)}
+      <div class="page">
+        <div class="card">
+          <h3 class="form-section-title">📸 Identité</h3>
+          <label class="field-label">Photo du paquet</label>
+          <div class="photo-upload" id="photo-zone" onclick="document.getElementById('f-photo').click()">
+            <span id="photo-placeholder" style="${chip.photo ? "display:none" : ""}">+ Ajouter une photo</span>
+            <img id="photo-preview" src="${chip.photo || ""}" style="${chip.photo ? "display:block" : "display:none"}">
+          </div>
+          <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="App.previewPhoto(event)">
+
+          <label class="field-label">Marque *</label>
+          <input class="input" id="f-marque" placeholder="Ex : Lay's" value="${escapeHTML(chip.marque || "")}" list="marques-list">
+          <datalist id="marques-list">${Store.getMarques().map((m) => `<option value="${escapeHTML(m.nom)}">`).join("")}</datalist>
+
+          <label class="field-label">Nom commercial</label>
+          <input class="input" id="f-nomcommercial" placeholder="Ex : Strong" value="${escapeHTML(chip.nomCommercial || "")}">
+
+          <label class="field-label">Saveur *</label>
+          <select class="input" id="f-saveur">
+            <option value="">— Choisir —</option>
+            ${Object.entries(saveursByFamille).map(([fam, list]) => `
+              <optgroup label="${fam}">
+                ${list.map((s) => `<option value="${s.id}"${s.id === chip.saveurId ? " selected" : ""}>${escapeHTML(s.label)}</option>`).join("")}
+              </optgroup>`).join("")}
+            <option value="__new__">+ Ajouter une saveur personnalisée</option>
+          </select>
+
+          <label class="field-label">Gamme (optionnel)</label>
+          <input class="input" id="f-gamme" placeholder="Ex : Édition limitée" value="${escapeHTML(chip.gamme || "")}">
+
+          <label class="field-label">Pays d'origine</label>
+          <input class="input" id="f-pays" placeholder="Ex : France" value="${escapeHTML(chip.paysOrigine || "")}">
+
+          <label class="field-label">Magasin d'achat</label>
+          <input class="input" id="f-magasin" placeholder="Ex : Carrefour" value="${escapeHTML(chip.magasin || "")}">
+
+          <div class="field-row">
+            <div>
+              <label class="field-label">Prix (€)</label>
+              <input class="input" id="f-prix" type="number" step="0.01" min="0" placeholder="2.49" value="${chip.prix != null ? chip.prix : ""}">
+            </div>
+            <div>
+              <label class="field-label">Poids (g)</label>
+              <input class="input" id="f-poids" type="number" step="1" min="0" placeholder="150" value="${chip.poids != null ? chip.poids : ""}">
+            </div>
+          </div>
+          <div class="price100g" id="price100g">Prix / 100g : ${chip.prix && chip.poids ? fmtEUR((chip.prix / chip.poids) * 100) : "—"}</div>
+
+          <h3 class="form-section-title">🗂️ Classification</h3>
+          <label class="field-label">Famille</label>
+          <select class="input" id="f-famille">
+            <option value="">— Choisir —</option>
+            ${allFamilles.map((f) => `<option value="${f.id}"${f.id === chip.familleId ? " selected" : ""}>${f.emoji} ${escapeHTML(f.label)}</option>`).join("")}
+            <option value="__new__">+ Créer une catégorie personnalisée</option>
+          </select>
+
+          <label class="field-label">Forme / découpe</label>
+          <select class="input" id="f-forme">
+            <option value="">— Optionnel —</option>
+            ${FORMES.map((f) => `<option value="${f.id}"${f.id === chip.formeId ? " selected" : ""}>${escapeHTML(f.label)}</option>`).join("")}
+          </select>
+
+          <label class="field-label">Type de cuisson</label>
+          <select class="input" id="f-cuisson">
+            <option value="">— Optionnel —</option>
+            ${CUISSONS.map((c) => `<option value="${c.id}"${c.id === chip.cuissonId ? " selected" : ""}>${escapeHTML(c.label)}</option>`).join("")}
+          </select>
+
+          <label class="field-label">Niveau de piquant</label>
+          <input type="range" class="slider" id="f-piquant" min="0" max="5" step="1" value="${chip.piquant || 0}" oninput="document.getElementById('piquant-label').textContent = App.piquantLabel(this.value)">
+          <div class="slider-value" id="piquant-label">${this.piquantLabel(chip.piquant || 0)}</div>
+
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.saveEditChip('${chip.id}')">Enregistrer les modifications</button>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+    document.getElementById("f-prix").addEventListener("input", this.updatePrice100g);
+    document.getElementById("f-poids").addEventListener("input", this.updatePrice100g);
+    document.getElementById("f-saveur").addEventListener("change", (e) => {
+      if (e.target.value === "__new__") {
+        const label = prompt("Nom de la nouvelle saveur :");
+        if (!label) { e.target.value = ""; return; }
+        const famLabel = prompt("Famille de saveur (ex: Épicé, Fromage, Premium, WTF...) :", "WTF");
+        let fam = FAMILLES_SAVEUR.find((f) => f.label.toLowerCase().includes((famLabel || "").toLowerCase()));
+        const sv = Store.addSaveurPerso(label, fam ? fam.id : "wtf");
+        const opt = document.createElement("option");
+        opt.value = sv.id; opt.textContent = sv.label; opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastElementChild);
+      }
+    });
+    document.getElementById("f-famille").addEventListener("change", (e) => {
+      if (e.target.value === "__new__") {
+        const label = prompt("Nom de la nouvelle catégorie :");
+        if (!label) { e.target.value = ""; return; }
+        const f = Store.addFamillePerso(label);
+        const opt = document.createElement("option");
+        opt.value = f.id; opt.textContent = "❓ " + f.label; opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastElementChild);
+      }
+    });
+  },
+
+  saveEditChip(chipId) {
+    const marque = document.getElementById("f-marque").value.trim();
+    const saveurId = document.getElementById("f-saveur").value;
+    if (!marque) return alert("La marque est obligatoire.");
+    if (!saveurId || saveurId === "__new__") return alert("Choisis une saveur.");
+
+    Store.addMarque(marque);
+    const saveur = Store.getAllSaveurs().find((s) => s.id === saveurId);
+
+    Store.updateChip(chipId, {
+      photo: this._pendingPhoto || Store.getChip(chipId).photo || null,
+      marque,
+      nomCommercial: document.getElementById("f-nomcommercial").value.trim(),
+      saveurId,
+      saveurLabel: saveur.label,
+      saveurFamilleId: saveur.familleId,
+      gamme: document.getElementById("f-gamme").value.trim(),
+      paysOrigine: document.getElementById("f-pays").value.trim(),
+      magasin: document.getElementById("f-magasin").value.trim(),
+      prix: parseFloat(document.getElementById("f-prix").value) || null,
+      poids: parseFloat(document.getElementById("f-poids").value) || null,
+      familleId: document.getElementById("f-famille").value || null,
+      formeId: document.getElementById("f-forme").value || null,
+      cuissonId: document.getElementById("f-cuisson").value || null,
+      piquant: +document.getElementById("f-piquant").value
+    });
+    this._pendingPhoto = null;
+
+    location.hash = `#/chip/${chipId}`;
   },
 
   /* ============================================================
