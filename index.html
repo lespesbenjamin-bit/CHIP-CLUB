@@ -285,12 +285,35 @@ a { color: inherit; }
 
 .tasting-list { margin: 14px 0; }
 .tasting-row {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
   padding: 12px 16px; background: var(--off-white); border-radius: var(--radius-sm);
   margin-bottom: 8px; box-shadow: var(--shadow-card);
 }
+.tr-main { flex: 1; min-width: 0; cursor: pointer; }
 .tr-name { font-size: 14px; font-weight: 600; }
-.tr-note { font-weight: 800; color: var(--burnt-orange-deep); }
+.tr-sub { font-size: 11.5px; color: var(--anthracite-soft); margin-top: 2px; }
+.tr-note { font-weight: 800; color: var(--burnt-orange-deep); white-space: nowrap; }
+
+/* ---------- Identité de l'appareil ---------- */
+.identity-banner {
+  background: var(--anthracite); color: var(--gold); font-size: 12.5px; font-weight: 700;
+  border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; cursor: pointer; text-align: center;
+}
+.identity-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.identity-btn {
+  border: 1.5px solid var(--line); background: var(--cream); border-radius: var(--radius-md);
+  padding: 16px 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.identity-btn.active { background: #FBEADE; border-color: var(--burnt-orange); box-shadow: 0 0 0 1.5px var(--burnt-orange) inset; }
+.identity-emoji { font-size: 28px; }
+
+.vote-status { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 14px 0; }
+.vote-pill {
+  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: var(--line); color: var(--anthracite-soft);
+}
+.vote-pill.voted { background: #FBEADE; color: var(--burnt-orange-deep); }
 
 /* ---------- Progress bar / rating flow ---------- */
 .progress-bar { height: 6px; background: var(--line); border-radius: 4px; margin: 4px 0 16px; overflow: hidden; }
@@ -1715,6 +1738,22 @@ const escapeHTML = (s) => (s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 
 const App = {
   wizard: null, // état volatile de la dégustation en cours
+  _pendingAction: null, // action à reprendre une fois l'identité choisie
+
+  /* ---------- Identité de l'appareil ("Qui es-tu ?") ----------
+     Chaque téléphone retient qui l'utilise (stocké en local, jamais
+     partagé) pour permettre à chacun de noter à son rythme, sans se
+     passer l'appareil. */
+  IDENTITY_KEY: "chipclub_identity",
+  getIdentity() {
+    try {
+      const id = localStorage.getItem(this.IDENTITY_KEY);
+      return id ? Store.getDegustateur(id) || null : null;
+    } catch (e) { return null; }
+  },
+  setIdentity(id) {
+    try { localStorage.setItem(this.IDENTITY_KEY, id); } catch (e) {}
+  },
 
   async init() {
     $app().innerHTML = `
@@ -1762,6 +1801,7 @@ const App = {
     if (parts[0] === "chip" && parts[1] && parts[2] === "edit") return this.renderEditChip(parts[1]);
     if (parts[0] === "chip" && parts[1]) return this.renderChipDetail(parts[1]);
     if (parts[0] === "note" && parts[1] && parts[2] === "edit") return this.renderEditNote(parts[1]);
+    if (parts[0] === "identite") return this.renderIdentityPicker();
     if (parts[0] === "classement") return this.renderClassement();
     if (parts[0] === "halloffame") return this.renderHallOfFame();
     if (parts[0] === "degustateurs") return this.renderDegustateursList();
@@ -1976,9 +2016,14 @@ const App = {
     }
 
     const degs = Store.getDegustationsBySoiree(soireeId);
+    const identity = this.getIdentity();
     $app().innerHTML = `
       ${this.header(soiree.nom, true, `#/soiree/${soireeId}`)}
       <div class="page">
+        <div class="identity-banner" onclick="location.hash='#/identite'">
+          ${identity ? `👤 Tu notes en tant que <b>${identity.avatarEmoji} ${escapeHTML(identity.nom)}</b> · changer` : `👤 Choisis qui tu es pour pouvoir noter →`}
+        </div>
+
         <div class="card session-card">
           <div class="session-meta">
             <span>${soiree.date}</span>
@@ -1992,9 +2037,18 @@ const App = {
           ${degs.map((d) => {
             const chip = Store.getChip(d.chipId);
             const note = Calc.noteChipClub(d.id);
+            const notesForDeg = Store.getNotesByDegustation(d.id);
+            const myNote = identity ? notesForDeg.find((n) => n.degustateurId === identity.id) : null;
+            const votedCount = soiree.participantsIds.filter((pid) => notesForDeg.some((n) => n.degustateurId === pid)).length;
             return `<div class="tasting-row">
-              <div class="tr-name">${chip.marque} — ${d.revele || soiree.mode !== "aveugle" ? chip.saveurLabel : "🙈 caché"}</div>
+              <div class="tr-main" onclick="location.hash='#/chip/${chip.id}'">
+                <div class="tr-name">${escapeHTML(chip.marque)} — ${d.revele || soiree.mode !== "aveugle" ? escapeHTML(chip.saveurLabel) : "🙈 caché"}</div>
+                <div class="tr-sub">${votedCount}/${soiree.participantsIds.length} ont noté</div>
+              </div>
               <div class="tr-note">${note != null ? fmt(note) : "…"}</div>
+              ${myNote
+                ? `<button class="btn btn-small btn-ghost" onclick="location.hash='#/note/${myNote.id}/edit'">✏️ Ma note</button>`
+                : `<button class="btn btn-small btn-primary" onclick="App.noterPaquet('${d.id}', '${soireeId}')">📝 Noter</button>`}
             </div>`;
           }).join("")}
         </div>` : `<p class="muted">Aucun paquet ajouté pour l'instant.</p>`}
@@ -2008,6 +2062,11 @@ const App = {
   },
 
   newChipFlow(soireeId) {
+    if (!this.getIdentity()) {
+      this._pendingAction = { type: "newChip", soireeId };
+      location.hash = "#/identite";
+      return;
+    }
     this.wizard = { soireeId, step: "chipform" };
     this.renderWizardStep();
   },
@@ -2017,6 +2076,39 @@ const App = {
     if (w.step === "chipform") return this.renderChipForm();
     if (w.step === "rating") return this.renderRatingStep();
     if (w.step === "reveal") return this.renderRevealStep();
+  },
+
+  // Chacun note un paquet déjà créé, avec son propre téléphone, à son
+  // rythme — sans passer l'appareil à la ronde.
+  noterPaquet(degustationId, soireeId) {
+    if (!this.getIdentity()) {
+      this._pendingAction = { type: "noter", degustationId, soireeId };
+      location.hash = "#/identite";
+      return;
+    }
+    const identity = this.getIdentity();
+    const existing = Store.getNotesByDegustation(degustationId).find((n) => n.degustateurId === identity.id);
+    if (existing) { location.hash = `#/note/${existing.id}/edit`; return; }
+    const deg = Store.getDegustation(degustationId);
+    this.wizard = {
+      soireeId, step: "rating",
+      degustationId,
+      chipId: deg.chipId,
+      participants: [identity.id],
+      participantIndex: 0,
+      criteriaIndex: 0,
+      bonusIndex: 0,
+      current: this.emptyNote(),
+      singleTaster: true
+    };
+    this.renderRatingStep();
+  },
+
+  backToSoireePaquets() {
+    const soireeId = this.wizard ? this.wizard.soireeId : null;
+    this.wizard = null;
+    location.hash = soireeId ? `#/soiree/${soireeId}/deguster` : "#/";
+    this.route();
   },
 
   cancelWizard() {
@@ -2199,16 +2291,21 @@ const App = {
 
     const soiree = Store.getSoiree(this.wizard.soireeId);
     const degustation = Store.addDegustation({ soireeId: soiree.id, chipId: chip.id });
+    const identity = this.getIdentity();
 
     this.wizard = {
       soireeId: soiree.id, step: "rating",
       degustationId: degustation.id,
       chipId: chip.id,
-      participants: soiree.participantsIds.slice(),
+      // Celui·celle qui crée le paquet le note tout de suite avec son
+      // identité ; les autres participants pourront le noter ensuite,
+      // chacun à son rythme, depuis la liste des paquets de la soirée.
+      participants: identity ? [identity.id] : soiree.participantsIds.slice(),
       participantIndex: 0,
       criteriaIndex: 0,
       bonusIndex: 0,
-      current: this.emptyNote()
+      current: this.emptyNote(),
+      singleTaster: !!identity
     };
     this.renderRatingStep();
   },
@@ -2359,6 +2456,13 @@ const App = {
       return { t, m };
     });
 
+    const notesForDeg = Store.getNotesByDegustation(w.degustationId);
+    const votingStatus = w.singleTaster ? soiree.participantsIds.map((id) => {
+      const t = Store.getDegustateur(id);
+      const voted = notesForDeg.some((n) => n.degustateurId === id);
+      return { t, voted };
+    }) : [];
+
     $app().innerHTML = `
       ${this.header("Résultat", false)}
       <div class="page">
@@ -2383,8 +2487,18 @@ const App = {
             </div>
           `}
 
-          <button class="btn btn-secondary btn-lg btn-block" onclick="App.continueSoiree()">+ Ajouter un autre paquet</button>
-          <button class="btn btn-ghost btn-block" onclick="App.finishSoireeFromWizard()">Terminer la soirée — voir le récap</button>
+          ${votingStatus.length > 1 ? `
+          <div class="vote-status">
+            ${votingStatus.map((v) => `<span class="vote-pill ${v.voted ? "voted" : ""}">${v.t.avatarEmoji} ${escapeHTML(v.t.nom)} ${v.voted ? "✓" : "…"}</span>`).join("")}
+          </div>` : ""}
+
+          ${w.singleTaster ? `
+            <button class="btn btn-secondary btn-lg btn-block" onclick="App.continueSoiree()">+ Ajouter un autre paquet</button>
+            <button class="btn btn-primary btn-lg btn-block" onclick="App.backToSoireePaquets()">← Retour aux paquets</button>
+          ` : `
+            <button class="btn btn-secondary btn-lg btn-block" onclick="App.continueSoiree()">+ Ajouter un autre paquet</button>
+            <button class="btn btn-ghost btn-block" onclick="App.finishSoireeFromWizard()">Terminer la soirée — voir le récap</button>
+          `}
         </div>
       </div>
     `;
@@ -2594,6 +2708,53 @@ const App = {
       ${this.bottomNav()}
       ${this.sideMenu()}
     `;
+  },
+
+  /* ============================================================
+     IDENTITÉ ("Qui es-tu ?")
+     ============================================================ */
+  renderIdentityPicker() {
+    this.setNav("");
+    const tasters = Store.getDegustateurs();
+    const current = this.getIdentity();
+    $app().innerHTML = `
+      ${this.header("Qui es-tu ?", true, "#/")}
+      <div class="page">
+        <div class="card" style="text-align:center">
+          <p class="muted" style="margin-bottom:16px">Choisis ton profil sur cet appareil. Chaque téléphone garde son identité : tu pourras noter les paquets à ton rythme, sans avoir à passer le téléphone.</p>
+          <div class="identity-grid">
+            ${tasters.map((t) => `<button type="button" class="identity-btn${current && current.id === t.id ? " active" : ""}" onclick="App.chooseIdentity('${t.id}')">
+              <span class="identity-emoji">${t.avatarEmoji}</span>
+              <span>${escapeHTML(t.nom)}</span>
+            </button>`).join("")}
+          </div>
+          <div class="inline-add" style="margin-top:16px">
+            <input class="input" id="f-newidentity" placeholder="Ton prénom (si absent de la liste)">
+            <button class="btn btn-small" onclick="App.addIdentityInline()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  chooseIdentity(id) {
+    this.setIdentity(id);
+    const action = this._pendingAction;
+    this._pendingAction = null;
+    if (action && action.type === "newChip") { this.newChipFlow(action.soireeId); return; }
+    if (action && action.type === "noter") { this.noterPaquet(action.degustationId, action.soireeId); return; }
+    location.hash = "#/";
+    this.route();
+  },
+
+  addIdentityInline() {
+    const input = document.getElementById("f-newidentity");
+    const nom = input.value.trim();
+    if (!nom) return;
+    const t = Store.addDegustateur(nom);
+    this.chooseIdentity(t.id);
   },
 
   /* ============================================================
@@ -3315,10 +3476,12 @@ const App = {
   },
 
   sideMenu() {
+    const identity = this.getIdentity();
     return `
     <div class="menu-overlay" id="menuOverlay" onclick="App.toggleMenu()"></div>
     <div class="side-menu" id="sideMenu">
       <div class="side-menu-title">CHIP CLUB</div>
+      <button class="side-menu-item" onclick="location.hash='#/identite'">👤 ${identity ? `Tu es ${identity.avatarEmoji} ${escapeHTML(identity.nom)} — changer` : "Qui es-tu ?"}</button>
       <button class="side-menu-item" onclick="location.hash='#/soirees'">📅 Soirées</button>
       <button class="side-menu-item" onclick="location.hash='#/degustateurs'">🙋 Dégustateurs</button>
       <button class="side-menu-item" onclick="location.hash='#/halloffame'">🏛️ Hall of Fame</button>
