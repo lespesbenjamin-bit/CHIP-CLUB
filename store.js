@@ -8,6 +8,15 @@
 
 const STORAGE_KEY = "chipclub_v1";
 
+/* Le club fondateur : ces dégustateurs sont créés automatiquement au premier
+   lancement, pour ne pas avoir à les ressaisir à chaque nouvelle soirée. */
+const DEFAULT_TASTERS = [
+  { nom: "Benjamin", avatarEmoji: "🦊" },
+  { nom: "Adam", avatarEmoji: "🐺" },
+  { nom: "Pierre Louis", avatarEmoji: "🦁" },
+  { nom: "Carla", avatarEmoji: "🐼" }
+];
+
 const DEFAULT_STATE = {
   meta: {
     version: 1,
@@ -56,12 +65,14 @@ const Store = {
       } else {
         this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         this._state.meta.createdAt = new Date().toISOString();
+        this._seedDefaultTasters();
         this.save();
       }
     } catch (e) {
       console.error("Erreur de lecture du stockage, réinitialisation.", e);
       this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
       this._state.meta.createdAt = new Date().toISOString();
+      this._seedDefaultTasters();
       this.save();
     }
     return this._state;
@@ -79,7 +90,19 @@ const Store = {
   reset() {
     this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
     this._state.meta.createdAt = new Date().toISOString();
+    this._seedDefaultTasters();
     this.save();
+  },
+
+  _seedDefaultTasters() {
+    for (const t of DEFAULT_TASTERS) {
+      if (!this._state.degustateurs.some((d) => d.nom.toLowerCase() === t.nom.toLowerCase())) {
+        this._state.degustateurs.push({
+          id: uid("taster"), nom: t.nom, avatarEmoji: t.avatarEmoji,
+          createdAt: new Date().toISOString(), isDemo: false
+        });
+      }
+    }
   },
 
   /* ---------- Dégustateurs ---------- */
@@ -116,7 +139,7 @@ const Store = {
   /* ---------- Saveurs personnalisées ---------- */
   addSaveurPerso(label, familleId) {
     const s = this.load();
-    const id = "perso-" + label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
+    const id = "perso-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
     let existing = s.saveursPerso.find((sv) => sv.id === id);
     if (existing) return existing;
     const sv = { id, label, familleId };
@@ -131,7 +154,7 @@ const Store = {
   /* ---------- Familles personnalisées ---------- */
   addFamillePerso(label) {
     const s = this.load();
-    const id = "perso-fam-" + label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
+    const id = "perso-fam-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
     let existing = s.famillesPerso.find((f) => f.id === id);
     if (existing) return existing;
     const f = { id, label, emoji: "❓" };

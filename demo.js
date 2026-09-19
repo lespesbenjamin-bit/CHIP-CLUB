@@ -8,18 +8,9 @@ const Demo = {
   load() {
     const s = Store.load();
 
-    // Dégustateurs
-    const noms = [
-      { nom: "Benjamin", emoji: "🦊" },
-      { nom: "Paul", emoji: "🐼" },
-      { nom: "Lucas", emoji: "🐸" },
-      { nom: "Thomas", emoji: "🐨" }
-    ];
-    const tasters = noms.map((n) => {
-      const d = { id: uid("taster"), nom: n.nom, avatarEmoji: n.emoji, createdAt: new Date().toISOString(), isDemo: true };
-      s.degustateurs.push(d);
-      return d;
-    });
+    // Dégustateurs : on réutilise le club fondateur déjà présent (Benjamin,
+    // Adam, Pierre Louis, Carla) plutôt que de créer des doublons de démo.
+    const tasters = DEFAULT_TASTERS.map((n) => Store.addDegustateur(n.nom, n.avatarEmoji));
 
     const chipsData = [
       { marque: "Lay's", nomCommercial: "Classic", saveurId: "nature", familleId: "pdt-classique", formeId: "fine-classique", cuissonId: "frite-classique", pays: "France", magasin: "Carrefour", prix: 1.99, poids: 130, piquant: 0 },
