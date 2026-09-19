@@ -961,13 +961,25 @@ const Store = {
       .subscribe();
   },
 
-  _bg(promise, label) {
-    // écriture en tâche de fond : le cache local est déjà à jour,
-    // on log juste une erreur réseau éventuelle sans bloquer l'interface.
-    Promise.resolve(promise).then(({ error }) => {
-      if (error) {
-        console.error("Erreur Supabase (" + label + ")", error);
-        alert("⚠️ Écriture refusée par la base partagée (" + label + ") :\n" + error.message + "\n\nCette modification n'est peut-être pas sauvegardée pour les autres.");
+  _writeQueue: Promise.resolve(),
+
+  _bg(factory, label) {
+    // écriture en tâche de fond, mais mise en FILE D'ATTENTE stricte :
+    // chaque écriture attend que la précédente soit confirmée par le
+    // serveur avant de partir. Indispensable ici car certaines lignes
+    // dépendent d'une autre qui vient d'être créée (ex : une dégustation
+    // référence un paquet tout juste inséré) — sans cette file, les deux
+    // requêtes réseau peuvent arriver dans le désordre et Postgres
+    // refuse l'écriture (violation de clé étrangère).
+    this._writeQueue = this._writeQueue.then(async () => {
+      try {
+        const { error } = await factory();
+        if (error) {
+          console.error("Erreur Supabase (" + label + ")", error);
+          alert("⚠️ Écriture refusée par la base partagée (" + label + ") :\n" + error.message + "\n\nCette modification n'est peut-être pas sauvegardée pour les autres.");
+        }
+      } catch (e) {
+        console.error("Erreur réseau Supabase (" + label + ")", e);
       }
     });
   },
@@ -990,7 +1002,7 @@ const Store = {
     if (existing) return existing;
     const d = { id: uid("taster"), nom, avatarEmoji: avatarEmoji || pickAvatar(nom), isDemo: false, createdAt: new Date().toISOString() };
     this._state.degustateurs.push(d);
-    this._bg(this._client.from(TABLES.degustateurs).insert([d]), "addDegustateur");
+    this._bg(() => this._client.from(TABLES.degustateurs).insert([d]), "addDegustateur");
     return d;
   },
   getDegustateur(id) { return this._state.degustateurs.find((d) => d.id === id); },
@@ -1001,7 +1013,7 @@ const Store = {
     if (existing) return existing;
     const m = { id: uid("brand"), nom };
     this._state.marques.push(m);
-    this._bg(this._client.from(TABLES.marques).insert([m]), "addMarque");
+    this._bg(() => this._client.from(TABLES.marques).insert([m]), "addMarque");
     return m;
   },
   getMarques() { return this._state.marques; },
@@ -1013,7 +1025,7 @@ const Store = {
     if (existing) return existing;
     const sv = { id, label, familleId };
     this._state.saveursPerso.push(sv);
-    this._bg(this._client.from(TABLES.saveursPerso).insert([sv]), "addSaveurPerso");
+    this._bg(() => this._client.from(TABLES.saveursPerso).insert([sv]), "addSaveurPerso");
     return sv;
   },
   getAllSaveurs() { return SAVEURS.concat(this._state.saveursPerso); },
@@ -1025,7 +1037,7 @@ const Store = {
     if (existing) return existing;
     const f = { id, label, emoji: "❓" };
     this._state.famillesPerso.push(f);
-    this._bg(this._client.from(TABLES.famillesPerso).insert([f]), "addFamillePerso");
+    this._bg(() => this._client.from(TABLES.famillesPerso).insert([f]), "addFamillePerso");
     return f;
   },
   getAllFamilles() { return FAMILLES.concat(this._state.famillesPerso); },
@@ -1034,7 +1046,7 @@ const Store = {
   addSoiree(soiree) {
     const o = Object.assign({ id: uid("night"), isDemo: false, createdAt: new Date().toISOString() }, soiree);
     this._state.soirees.push(o);
-    this._bg(this._client.from(TABLES.soirees).insert([o]), "addSoiree");
+    this._bg(() => this._client.from(TABLES.soirees).insert([o]), "addSoiree");
     return o;
   },
   getSoirees() { return this._state.soirees.slice().sort((a, b) => new Date(b.date) - new Date(a.date)); },
@@ -1044,7 +1056,7 @@ const Store = {
   addChip(chip) {
     const c = Object.assign({ id: uid("chip"), isDemo: false, createdAt: new Date().toISOString() }, chip);
     this._state.chips.push(c);
-    this._bg(this._client.from(TABLES.chips).insert([c]), "addChip");
+    this._bg(() => this._client.from(TABLES.chips).insert([c]), "addChip");
     return c;
   },
   getChips() { return this._state.chips; },
@@ -1054,7 +1066,7 @@ const Store = {
   addDegustation(deg) {
     const d = Object.assign({ id: uid("tasting"), revele: false, createdAt: new Date().toISOString() }, deg);
     this._state.degustations.push(d);
-    this._bg(this._client.from(TABLES.degustations).insert([d]), "addDegustation");
+    this._bg(() => this._client.from(TABLES.degustations).insert([d]), "addDegustation");
     return d;
   },
   getDegustations() { return this._state.degustations; },
@@ -1064,7 +1076,7 @@ const Store = {
     const d = this._state.degustations.find((x) => x.id === id);
     if (d) {
       d.revele = true;
-      this._bg(this._client.from(TABLES.degustations).update({ revele: true }).eq("id", id), "revelerDegustation");
+      this._bg(() => this._client.from(TABLES.degustations).update({ revele: true }).eq("id", id), "revelerDegustation");
     }
     return d;
   },
@@ -1073,7 +1085,7 @@ const Store = {
   addNote(note) {
     const n = Object.assign({ id: uid("note"), createdAt: new Date().toISOString() }, note);
     this._state.notes.push(n);
-    this._bg(this._client.from(TABLES.notes).insert([n]), "addNote");
+    this._bg(() => this._client.from(TABLES.notes).insert([n]), "addNote");
     return n;
   },
   getNotes() { return this._state.notes; },
@@ -1084,7 +1096,7 @@ const Store = {
   getSeuils() { return this._state.seuils && this._state.seuils.length ? this._state.seuils : SEUILS_VERDICT; },
   setSeuils(seuils) {
     this._state.seuils = seuils;
-    this._bg(this._client.from("settings").upsert({ id: "global", seuils, demoLoaded: this._state.settings.demoLoaded }), "setSeuils");
+    this._bg(() => this._client.from("settings").upsert({ id: "global", seuils, demoLoaded: this._state.settings.demoLoaded }), "setSeuils");
   },
 
   /* ---------- Export / Import / Reset ---------- */
@@ -1111,7 +1123,7 @@ const Store = {
   isDemoLoaded() { return !!this._state.settings.demoLoaded; },
   setDemoLoaded(v) {
     this._state.settings.demoLoaded = v;
-    this._bg(this._client.from("settings").upsert({ id: "global", seuils: this._state.seuils, demoLoaded: v }), "setDemoLoaded");
+    this._bg(() => this._client.from("settings").upsert({ id: "global", seuils: this._state.seuils, demoLoaded: v }), "setDemoLoaded");
   },
   async removeDemoData() {
     const s = this._state;
