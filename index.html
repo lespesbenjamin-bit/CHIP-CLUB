@@ -7,15 +7,2864 @@
 <meta name="description" content="Application de dégustation et de classement de chips entre amis.">
 <meta name="theme-color" content="#FBF4E6">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥔</text></svg>">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap">
+<style>
+/* ============================================================
+   CHIP CLUB — styles.css
+   Direction artistique : club privé de dégustation de chips.
+   Palette : crème, jaune doré, orange légèrement brûlé,
+   anthracite, blanc cassé. Moderne, premium, un peu fun.
+   ============================================================ */
+
+:root {
+  --cream: #FBF4E6;
+  --off-white: #FFFDF9;
+  --gold: #E8B93F;
+  --gold-deep: #C99A1F;
+  --burnt-orange: #D9662B;
+  --burnt-orange-deep: #B94F1D;
+  --anthracite: #2B2A28;
+  --anthracite-soft: #4A4744;
+  --line: #E9DFC9;
+  --success: #5C8A5C;
+  --danger: #C0432E;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --shadow-card: 0 4px 18px rgba(43, 42, 40, 0.08);
+  --shadow-pop: 0 10px 30px rgba(43, 42, 40, 0.16);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--cream);
+  color: var(--anthracite);
+  font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  padding-bottom: 88px;
+  min-height: 100vh;
+}
+button, input, select, textarea { font-family: var(--font); }
+
+/* Police display : titres, grands chiffres, éléments d'emphase — moderne et géométrique */
+h1, h2, h3,
+.brand-title, .section-title, .form-section-title,
+.stat-num, .avg-value, .reveal-note, .podium-note, .podium-brand,
+.rank-note, .cc-note, .hof-note, .rate-value, .cd-title, .lc-title,
+.bv.win, .titre-label, .taster-name, .profil-name, .profil-stats b,
+.session-count, .ri-brand, .bh-name, .empty-card h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+a { color: inherit; }
+::-webkit-scrollbar { display: none; }
+
+#app { max-width: 560px; margin: 0 auto; }
+
+.muted { color: var(--anthracite-soft); opacity: .65; font-size: 14px; }
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 18px 14px;
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream) 100%);
+  position: sticky; top: 0; z-index: 20;
+}
+.iconbtn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: none; background: var(--off-white);
+  box-shadow: var(--shadow-card);
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--anthracite); flex-shrink: 0;
+}
+.iconbtn:active { transform: scale(0.92); }
+.brand { display: flex; flex-direction: column; }
+.brand-title { font-weight: 800; font-size: 20px; letter-spacing: 0.3px; }
+.brand-sub { font-size: 11.5px; color: var(--anthracite-soft); opacity: .7; margin-top: 1px; }
+
+/* ---------- Page container ---------- */
+.page { padding: 4px 18px 32px; }
+
+.section-title {
+  font-size: 15px; font-weight: 700; margin: 26px 0 12px;
+  color: var(--anthracite);
+}
+.form-section-title {
+  font-size: 15px; font-weight: 700; margin: 4px 0 14px;
+  color: var(--burnt-orange-deep);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--off-white);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 16px;
+}
+.empty-card { text-align: center; padding: 36px 24px; }
+.empty-emoji { font-size: 48px; margin-bottom: 10px; }
+.empty-card h3 { margin: 6px 0; }
+.empty-card p { color: var(--anthracite-soft); font-size: 14px; margin-bottom: 18px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  border: none; border-radius: 999px; font-weight: 600;
+  padding: 13px 22px; font-size: 15px; cursor: pointer;
+  transition: transform .1s ease, opacity .1s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-block { width: 100%; margin-top: 10px; }
+.btn-lg { padding: 15px 22px; font-size: 16px; }
+.btn-small { padding: 9px 14px; font-size: 13px; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--burnt-orange), var(--burnt-orange-deep));
+  color: var(--off-white);
+  box-shadow: 0 6px 16px rgba(185, 79, 29, 0.32);
+}
+.btn-secondary {
+  background: var(--off-white); color: var(--anthracite);
+  border: 1.5px solid var(--line);
+}
+.btn-ghost {
+  background: transparent; color: var(--anthracite-soft);
+  font-weight: 500;
+}
+.btn-danger {
+  background: transparent; color: var(--danger);
+  border: 1.5px solid rgba(192, 67, 46, 0.3);
+}
+.cta-row { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 8px; }
+.file-btn { cursor: pointer; }
+
+/* ---------- Stat grid / dashboard ---------- */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px; margin-top: 10px;
+}
+.stat-tile {
+  background: var(--off-white); border-radius: var(--radius-md);
+  padding: 16px; text-align: center; box-shadow: var(--shadow-card);
+}
+.stat-num { font-size: 26px; font-weight: 800; color: var(--burnt-orange-deep); }
+.stat-label { font-size: 12px; color: var(--anthracite-soft); margin-top: 2px; }
+
+.avg-banner {
+  margin-top: 14px; padding: 20px;
+  background: linear-gradient(135deg, var(--anthracite), #3a3835);
+  border-radius: var(--radius-lg); color: var(--off-white);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.avg-label { font-size: 13px; opacity: .75; }
+.avg-value { font-size: 30px; font-weight: 800; color: var(--gold); }
+.avg-value span { font-size: 15px; opacity: .6; margin-left: 3px; }
+
+/* ---------- Podium ---------- */
+.podium {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 8px; margin: 18px 0 6px;
+}
+.podium-col { flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.podium-medal { font-size: 26px; margin-bottom: 4px; }
+.podium-card {
+  background: var(--off-white); border-radius: 14px 14px 0 0;
+  padding: 10px 8px; text-align: center; width: 100%;
+  box-shadow: var(--shadow-card);
+}
+.podium-brand { font-weight: 700; font-size: 12.5px; }
+.podium-flavor { font-size: 11px; color: var(--anthracite-soft); margin: 2px 0; }
+.podium-note { font-weight: 800; color: var(--burnt-orange-deep); font-size: 15px; }
+.podium-block { width: 100%; border-radius: 0 0 10px 10px; }
+.podium-1 .podium-block { height: 70px; background: linear-gradient(180deg, var(--gold), var(--gold-deep)); }
+.podium-2 .podium-block { height: 48px; background: linear-gradient(180deg, #C9C2B4, #A9A192); }
+.podium-3 .podium-block { height: 34px; background: linear-gradient(180deg, #D8A874, #B98850); }
+
+/* ---------- Hall of Fame tiles ---------- */
+.hof-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px;
+}
+.hof-tile {
+  background: var(--off-white); border-radius: var(--radius-md);
+  padding: 14px; box-shadow: var(--shadow-card); cursor: pointer;
+}
+.hof-emoji { font-size: 22px; }
+.hof-label { font-size: 12px; color: var(--anthracite-soft); margin: 4px 0 2px; }
+.hof-name { font-size: 13px; font-weight: 600; }
+.hof-note { font-size: 15px; font-weight: 800; color: var(--burnt-orange-deep); margin-top: 4px; }
+
+/* ---------- Forms ---------- */
+.field-label {
+  display: block; font-size: 13px; font-weight: 600;
+  margin: 16px 0 6px; color: var(--anthracite-soft);
+}
+.input {
+  width: 100%; padding: 13px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line); background: var(--cream);
+  font-size: 15px; color: var(--anthracite); outline: none;
+}
+.input:focus { border-color: var(--burnt-orange); }
+.select-sm { padding: 10px 12px; font-size: 13px; }
+.textarea { min-height: 90px; resize: vertical; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.price100g { font-size: 13px; color: var(--burnt-orange-deep); font-weight: 600; margin-top: 8px; }
+
+.chip-select { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-opt {
+  border: 1.5px solid var(--line); background: var(--cream);
+  border-radius: 999px; padding: 9px 14px; font-size: 13.5px;
+  cursor: pointer; color: var(--anthracite-soft);
+}
+.chip-opt.active {
+  background: var(--burnt-orange); border-color: var(--burnt-orange);
+  color: var(--off-white); font-weight: 600;
+}
+.inline-add { display: flex; gap: 8px; margin-top: 10px; }
+.inline-add .input { flex: 1; }
+
+.mode-select { display: flex; flex-direction: column; gap: 10px; }
+.mode-opt {
+  text-align: left; border: 1.5px solid var(--line); background: var(--cream);
+  border-radius: var(--radius-md); padding: 13px 15px; cursor: pointer;
+}
+.mode-opt.active { border-color: var(--burnt-orange); background: #FBEADE; }
+.mode-title { font-weight: 700; font-size: 14.5px; }
+.mode-desc { font-size: 12.5px; color: var(--anthracite-soft); margin-top: 2px; }
+
+.slider {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 4px; background: var(--line); outline: none;
+  margin-top: 6px;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--burnt-orange); box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer;
+}
+.slider.big::-webkit-slider-thumb { width: 28px; height: 28px; }
+.slider::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%; border: none;
+  background: var(--burnt-orange); cursor: pointer;
+}
+.slider-value { text-align: center; font-size: 13px; font-weight: 600; color: var(--burnt-orange-deep); margin-top: 6px; }
+
+.photo-upload {
+  height: 140px; border-radius: var(--radius-md); border: 2px dashed var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--anthracite-soft); font-size: 13.5px; cursor: pointer;
+  background: var(--cream); overflow: hidden;
+}
+.photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- Tasting session ---------- */
+.session-card { text-align: center; }
+.session-meta { display: flex; justify-content: center; gap: 10px; font-size: 12.5px; color: var(--anthracite-soft); flex-wrap: wrap; }
+.badge {
+  background: var(--line); border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700;
+}
+.badge-blind { background: var(--anthracite); color: var(--gold); }
+.session-count { font-size: 22px; font-weight: 800; margin-top: 8px; color: var(--burnt-orange-deep); }
+
+.tasting-list { margin: 14px 0; }
+.tasting-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: var(--off-white); border-radius: var(--radius-sm);
+  margin-bottom: 8px; box-shadow: var(--shadow-card);
+}
+.tr-name { font-size: 14px; font-weight: 600; }
+.tr-note { font-weight: 800; color: var(--burnt-orange-deep); }
+
+/* ---------- Progress bar / rating flow ---------- */
+.progress-bar { height: 6px; background: var(--line); border-radius: 4px; margin: 4px 0 16px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--burnt-orange)); transition: width .3s ease; }
+
+.chip-mini-card {
+  background: var(--off-white); border-radius: var(--radius-md);
+  padding: 12px 16px; text-align: center; margin-bottom: 14px; box-shadow: var(--shadow-card);
+}
+.chip-mini-card.blind { background: var(--anthracite); color: var(--gold); font-weight: 600; }
+.cmc-brand { font-weight: 700; font-size: 14px; }
+.cmc-flavor { font-size: 12.5px; color: var(--anthracite-soft); }
+
+.rate-card { text-align: center; padding: 28px 20px; }
+.rate-label { font-size: 19px; font-weight: 700; }
+.rate-desc { font-size: 13px; color: var(--anthracite-soft); margin-top: 6px; }
+.rate-value { font-size: 44px; font-weight: 800; color: var(--burnt-orange-deep); margin: 18px 0 4px; }
+
+.option-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.option-grid.vertical { text-align: left; }
+.option-btn {
+  border: 1.5px solid var(--line); background: var(--cream); border-radius: var(--radius-md);
+  padding: 14px 16px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+}
+.option-btn:active { background: #FBEADE; border-color: var(--burnt-orange); }
+.opt-emoji { font-size: 20px; }
+
+/* ---------- Reveal ---------- */
+.reveal-card { text-align: center; padding: 30px 20px; }
+.reveal-participants { text-align: left; margin-bottom: 18px; }
+.rp-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
+.rp-row:last-child { border: none; }
+.reveal-label { font-size: 13px; letter-spacing: 1.5px; color: var(--anthracite-soft); font-weight: 700; }
+.reveal-note {
+  font-family: var(--font-display); font-size: 64px; font-weight: 800; color: var(--burnt-orange-deep); letter-spacing: -0.02em;
+  margin: 6px 0;
+}
+.reveal-note.small { font-size: 44px; }
+.reveal-note span { font-size: 24px; opacity: .5; margin-left: 4px; }
+.reveal-verdict { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+.blind-box { margin: 10px 0; }
+.blind-hidden { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--anthracite-soft); }
+.reveal-identity { margin: 10px 0 18px; }
+.ri-brand { font-size: 20px; font-weight: 800; }
+.ri-flavor { font-size: 14px; color: var(--anthracite-soft); margin-top: 2px; }
+
+.anim-pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.anim-fadein { animation: fadein .4s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.anim-fadeout { animation: fadeout .25s ease forwards; }
+@keyframes fadeout { to { opacity: 0; } }
+
+/* ---------- Lists / cards ---------- */
+.list-card { cursor: pointer; }
+.lc-title { font-weight: 700; font-size: 15.5px; }
+.lc-sub { font-size: 12.5px; color: var(--anthracite-soft); margin-top: 3px; }
+
+.recap-header { text-align: center; }
+.recap-date { font-size: 13px; color: var(--anthracite-soft); }
+.recap-stats { display: flex; justify-content: center; gap: 12px; font-size: 13px; font-weight: 600; margin-top: 6px; flex-wrap: wrap; }
+
+/* ---------- Chips grid ---------- */
+.chips-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+.chip-card {
+  background: var(--off-white); border-radius: var(--radius-md);
+  overflow: hidden; box-shadow: var(--shadow-card); cursor: pointer;
+}
+.cc-photo {
+  height: 100px; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 34px;
+}
+.cc-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cc-body { padding: 10px 12px; }
+.cc-brand { font-weight: 700; font-size: 13.5px; }
+.cc-flavor { font-size: 12px; color: var(--anthracite-soft); }
+.cc-note { font-weight: 800; color: var(--burnt-orange-deep); font-size: 13px; margin-top: 4px; }
+
+/* ---------- Chip detail ---------- */
+.chip-detail { text-align: center; }
+.cd-photo { height: 160px; border-radius: var(--radius-md); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 44px; overflow: hidden; margin-bottom: 14px; }
+.cd-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cd-title { font-size: 19px; font-weight: 800; }
+.cd-flavor { font-size: 13.5px; color: var(--anthracite-soft); margin-top: 2px; margin-bottom: 6px; }
+
+.criteria-bars { text-align: left; margin: 18px 0; }
+.cbar-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.cbar-label { flex: 0 0 42%; font-size: 12.5px; color: var(--anthracite-soft); }
+.cbar-track { flex: 1; height: 8px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.cbar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--burnt-orange)); }
+.cbar-val { width: 32px; text-align: right; font-weight: 700; font-size: 12.5px; }
+
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; margin-top: 16px; }
+.info-grid div { background: var(--cream); border-radius: 10px; padding: 8px 10px; }
+.info-grid span { display: block; font-size: 10.5px; color: var(--anthracite-soft); }
+.info-grid b { font-size: 13px; }
+
+.comment-row { text-align: left; font-size: 13.5px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.comment-row:last-child { border: none; }
+
+/* ---------- Classement / Rank list ---------- */
+.filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
+.rank-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.rank-row {
+  display: flex; align-items: center; gap: 12px; background: var(--off-white);
+  border-radius: var(--radius-sm); padding: 10px 12px; box-shadow: var(--shadow-card); cursor: pointer;
+}
+.rank-pos { width: 22px; text-align: center; font-weight: 800; color: var(--anthracite-soft); }
+.rank-photo { width: 40px; height: 40px; border-radius: 10px; background: var(--cream); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 18px; flex-shrink: 0; }
+.rank-photo img { width: 100%; height: 100%; object-fit: cover; }
+.rank-info { flex: 1; min-width: 0; }
+.rank-brand { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-flavor { font-size: 11.5px; color: var(--anthracite-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-note { font-weight: 800; color: var(--burnt-orange-deep); font-size: 15px; }
+
+/* ---------- Dégustateurs ---------- */
+.titres-list { display: flex; flex-direction: column; gap: 8px; }
+.titre-row { display: flex; align-items: center; gap: 12px; background: var(--off-white); border-radius: var(--radius-sm); padding: 12px; box-shadow: var(--shadow-card); }
+.titre-emoji { font-size: 24px; }
+.titre-label { font-weight: 700; font-size: 13.5px; }
+.titre-name { font-size: 12px; color: var(--anthracite-soft); }
+
+.tasters-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+.taster-card { background: var(--off-white); border-radius: var(--radius-md); padding: 16px 8px; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; }
+.taster-avatar { font-size: 30px; }
+.taster-name { font-weight: 700; font-size: 12.5px; margin-top: 4px; }
+
+.profil-header { text-align: center; }
+.profil-avatar { font-size: 44px; }
+.profil-name { font-size: 19px; font-weight: 800; margin: 4px 0 14px; }
+.profil-stats { display: flex; justify-content: space-around; margin-bottom: 16px; }
+.profil-stats div { display: flex; flex-direction: column; }
+.profil-stats b { font-size: 20px; color: var(--burnt-orange-deep); }
+.profil-stats span { font-size: 11px; color: var(--anthracite-soft); }
+.profil-prefs { text-align: left; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+
+.pref-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.pref-tag { background: var(--off-white); border-radius: 999px; padding: 7px 13px; font-size: 12.5px; box-shadow: var(--shadow-card); }
+
+/* ---------- Battle ---------- */
+.battle-selectors { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.battle-selectors select { flex: 1; }
+.vs { font-weight: 800; color: var(--burnt-orange-deep); }
+.battle-card { margin-top: 16px; }
+.battle-header { display: flex; align-items: center; justify-content: space-between; text-align: center; margin-bottom: 16px; }
+.bh-name { font-weight: 700; font-size: 13.5px; flex: 1; }
+.bh-name span { display: block; font-weight: 500; font-size: 11.5px; color: var(--anthracite-soft); }
+.bh-vs { font-weight: 800; color: var(--anthracite-soft); padding: 0 8px; }
+.battle-row { display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.battle-row:last-child { border: none; }
+.bv { text-align: center; font-weight: 700; font-size: 14px; color: var(--anthracite-soft); }
+.bv.win { color: var(--burnt-orange-deep); font-size: 16px; }
+.bl { text-align: center; font-size: 11px; color: var(--anthracite-soft); }
+
+/* ---------- Stats / charts ---------- */
+.facts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+.facts-grid div { background: var(--cream); border-radius: 10px; padding: 10px; }
+.facts-grid span { display: block; font-size: 10.5px; color: var(--anthracite-soft); }
+.facts-grid b { font-size: 13px; }
+
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { flex: 0 0 38%; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-n { opacity: .5; }
+.bar-track { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--burnt-orange)); }
+.bar-val { width: 30px; text-align: right; font-weight: 700; font-size: 12px; }
+
+.chart-card { padding: 14px; }
+.scatter-svg { width: 100%; height: auto; }
+.axis { stroke: var(--line); stroke-width: 1.5; }
+.scatter-pt { fill: var(--burnt-orange); opacity: .75; }
+.chart-axes { display: flex; justify-content: space-between; font-size: 11px; color: var(--anthracite-soft); margin-top: 4px; }
+
+.fun-facts { display: flex; flex-direction: column; gap: 8px; }
+.fun-fact {
+  background: var(--anthracite); color: var(--gold); border-radius: var(--radius-sm);
+  padding: 12px 14px; font-size: 13.5px; font-weight: 500;
+}
+
+/* ---------- Settings ---------- */
+.seuil-row { display: grid; grid-template-columns: 60px 1fr 46px; gap: 6px; margin-bottom: 8px; align-items: center; }
+.seuil-input, .seuil-emoji { padding: 9px 8px; font-size: 12px; text-align: center; }
+.seuil-label { padding: 9px 8px; font-size: 12px; }
+
+/* ---------- Bottom nav ---------- */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--off-white); border-top: 1px solid var(--line);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  max-width: 560px; margin: 0 auto; z-index: 30;
+}
+.navbtn {
+  background: none; border: none; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; font-size: 10.5px; color: var(--anthracite-soft); cursor: pointer; padding: 4px 6px; font-weight: 600;
+}
+.navbtn span { font-size: 19px; }
+.navbtn.active { color: var(--burnt-orange-deep); }
+.navbtn-cta {
+  background: linear-gradient(135deg, var(--burnt-orange), var(--burnt-orange-deep));
+  color: var(--off-white); border-radius: 50%; width: 52px; height: 52px;
+  margin-top: -22px; box-shadow: 0 6px 16px rgba(185, 79, 29, 0.4);
+}
+.navbtn-cta span { font-size: 22px; }
+
+/* ---------- Side menu ---------- */
+.menu-overlay {
+  position: fixed; inset: 0; background: rgba(43,42,40,0.4);
+  opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 40;
+}
+.menu-overlay.open { opacity: 1; pointer-events: auto; }
+.side-menu {
+  position: fixed; top: 0; left: -280px; bottom: 0; width: 260px;
+  background: var(--off-white); z-index: 50; padding: 24px 18px;
+  transition: left .25s ease; box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.side-menu.open { left: 0; }
+.side-menu-title { font-weight: 800; font-size: 18px; margin-bottom: 16px; }
+.side-menu-item {
+  text-align: left; background: none; border: none; padding: 13px 10px;
+  border-radius: 10px; font-size: 14.5px; font-weight: 600; cursor: pointer; color: var(--anthracite);
+}
+.side-menu-item:active { background: var(--cream); }
+
+/* ---------- Responsive tweak for wider screens ---------- */
+@media (min-width: 600px) {
+  body { background: linear-gradient(180deg, #F3E8CF, var(--cream)); }
+  #app { box-shadow: 0 0 60px rgba(0,0,0,0.06); min-height: 100vh; background: var(--cream); }
+}
+
+</style>
 </head>
 <body>
 <div id="app"></div>
+<script>
 
-<script src="js/data.js"></script>
-<script src="js/store.js"></script>
-<script src="js/calc.js"></script>
-<script src="js/demo.js"></script>
-<script src="js/app.js"></script>
+/* ===== js/data.js ===== */
+/* ============================================================
+   CHIP CLUB — data.js
+   Référentiels statiques : familles, formes, cuissons, saveurs,
+   niveaux de piquant, seuils de verdict, contextes de dégustation.
+   Conçu pour pouvoir migrer plus tard vers Supabase : chaque
+   référentiel a un "id" stable, chaque entité utilisateur a un
+   id généré (uuid-like) et des timestamps ISO.
+   ============================================================ */
+
+/* ---------- Familles de chips / snacks ---------- */
+const FAMILLES = [
+  { id: "pdt-classique", label: "Chips de pomme de terre", emoji: "🥔" },
+  { id: "tortilla-mais", label: "Tortilla / chips de maïs", emoji: "🌽" },
+  { id: "pdt-ondulee", label: "Chips ondulées", emoji: "🥔" },
+  { id: "pdt-epaisse", label: "Chips épaisses / kettle cooked", emoji: "🥔" },
+  { id: "pdt-artisanale", label: "Chips artisanales", emoji: "🥔" },
+  { id: "pdt-chaudron", label: "Chips cuites au chaudron", emoji: "🥔" },
+  { id: "pdt-allegee", label: "Chips allégées / cuites au four", emoji: "🥔" },
+  { id: "legumes", label: "Chips de légumes", emoji: "🥔" },
+  { id: "patate-douce", label: "Chips de patate douce", emoji: "🍠" },
+  { id: "souffle", label: "Snacks soufflés", emoji: "🌽" },
+  { id: "fromage-souffle", label: "Snacks type soufflés fromage", emoji: "🧀" },
+  { id: "anneaux", label: "Anneaux / rings", emoji: "⭕" },
+  { id: "tortilla-triangle", label: "Tortillas triangulaires", emoji: "🔺" },
+  { id: "bretzel", label: "Bretzels / snacks apéritifs", emoji: "🥨" },
+  { id: "crackers", label: "Crackers apéritifs", emoji: "🌾" },
+  { id: "legumineuses", label: "Chips de légumineuses", emoji: "🌱" },
+  { id: "riz", label: "Chips de riz", emoji: "🍚" },
+  { id: "etranger", label: "Snack étranger / spécialité", emoji: "🌍" },
+  { id: "autre-famille", label: "Autre", emoji: "❓" }
+];
+
+/* ---------- Formes / découpe ---------- */
+const FORMES = [
+  { id: "fine-classique", label: "Fine classique" },
+  { id: "epaisse", label: "Épaisse" },
+  { id: "ondulee", label: "Ondulée" },
+  { id: "tres-ondulee", label: "Très ondulée" },
+  { id: "striee", label: "Striée" },
+  { id: "triangle", label: "Triangle" },
+  { id: "tube", label: "Tube" },
+  { id: "soufflee", label: "Soufflée" },
+  { id: "boule", label: "Boule" },
+  { id: "anneau", label: "Anneau" },
+  { id: "batonnet", label: "Bâtonnet" },
+  { id: "irreguliere", label: "Irrégulière / artisanale" },
+  { id: "autre-forme", label: "Autre" }
+];
+
+/* ---------- Type de cuisson ---------- */
+const CUISSONS = [
+  { id: "frite-classique", label: "Frite classique" },
+  { id: "chaudron", label: "Cuisson au chaudron" },
+  { id: "kettle", label: "Kettle cooked" },
+  { id: "four", label: "Cuisson au four" },
+  { id: "soufflee-cuisson", label: "Soufflée" },
+  { id: "autre-cuisson", label: "Autre" },
+  { id: "inconnue", label: "Inconnue" }
+];
+
+/* ---------- Familles de saveur (pour les statistiques) ---------- */
+const FAMILLES_SAVEUR = [
+  { id: "classique", label: "Classique" },
+  { id: "bbq-fume", label: "Barbecue / fumé" },
+  { id: "fromage", label: "Fromage" },
+  { id: "oignon-creme", label: "Oignon / crème" },
+  { id: "epice-piment", label: "Épicé / piment" },
+  { id: "vinaigre-acidule", label: "Vinaigre / acidulé" },
+  { id: "premium", label: "Premium" },
+  { id: "internationale", label: "Internationale" },
+  { id: "wtf", label: "WTF" }
+];
+
+/* ---------- Grande bibliothèque de saveurs ---------- */
+/* chaque saveur : id, label, familleId (référence FAMILLES_SAVEUR) */
+const SAVEURS = [
+  // Classiques
+  { id: "nature", label: "Nature", familleId: "classique" },
+  { id: "sel", label: "Sel", familleId: "classique" },
+  { id: "sel-mer", label: "Sel de mer", familleId: "classique" },
+  { id: "fleur-sel", label: "Fleur de sel", familleId: "classique" },
+  { id: "poivre", label: "Poivre", familleId: "classique" },
+  { id: "sel-poivre", label: "Sel & poivre", familleId: "classique" },
+  // Barbecue / fumé
+  { id: "barbecue", label: "Barbecue", familleId: "bbq-fume" },
+  { id: "barbecue-fume", label: "Barbecue fumé", familleId: "bbq-fume" },
+  { id: "bacon", label: "Bacon", familleId: "bbq-fume" },
+  { id: "bacon-fume", label: "Bacon fumé", familleId: "bbq-fume" },
+  { id: "poulet-roti", label: "Poulet rôti", familleId: "bbq-fume" },
+  { id: "poulet-bbq", label: "Poulet barbecue", familleId: "bbq-fume" },
+  { id: "viande-grillee", label: "Viande grillée", familleId: "bbq-fume" },
+  { id: "steak", label: "Steak", familleId: "bbq-fume" },
+  { id: "fume", label: "Saveur fumée", familleId: "bbq-fume" },
+  // Fromage
+  { id: "fromage", label: "Fromage", familleId: "fromage" },
+  { id: "cheddar", label: "Cheddar", familleId: "fromage" },
+  { id: "cheddar-affine", label: "Cheddar affiné", familleId: "fromage" },
+  { id: "emmental", label: "Emmental", familleId: "fromage" },
+  { id: "parmesan", label: "Parmesan", familleId: "fromage" },
+  { id: "comte", label: "Comté", familleId: "fromage" },
+  { id: "chevre", label: "Chèvre", familleId: "fromage" },
+  { id: "bleu", label: "Bleu", familleId: "fromage" },
+  { id: "fromage-oignon", label: "Fromage & oignon", familleId: "fromage" },
+  { id: "nacho-cheese", label: "Nacho cheese", familleId: "fromage" },
+  // Oignon / crème
+  { id: "oignon", label: "Oignon", familleId: "oignon-creme" },
+  { id: "oignon-grille", label: "Oignon grillé", familleId: "oignon-creme" },
+  { id: "oignon-caramelise", label: "Oignon caramélisé", familleId: "oignon-creme" },
+  { id: "creme-oignon", label: "Crème & oignon", familleId: "oignon-creme" },
+  { id: "sour-cream-onion", label: "Sour Cream & Onion", familleId: "oignon-creme" },
+  { id: "ciboulette", label: "Ciboulette", familleId: "oignon-creme" },
+  { id: "ail", label: "Ail", familleId: "oignon-creme" },
+  { id: "ail-fines-herbes", label: "Ail & fines herbes", familleId: "oignon-creme" },
+  // Épicé / piment
+  { id: "paprika", label: "Paprika", familleId: "epice-piment" },
+  { id: "paprika-fume", label: "Paprika fumé", familleId: "epice-piment" },
+  { id: "piment", label: "Piment", familleId: "epice-piment" },
+  { id: "chili", label: "Chili", familleId: "epice-piment" },
+  { id: "sweet-chili", label: "Sweet Chili", familleId: "epice-piment" },
+  { id: "chili-doux", label: "Chili doux", familleId: "epice-piment" },
+  { id: "chili-citron", label: "Chili & citron", familleId: "epice-piment" },
+  { id: "jalapeno", label: "Jalapeño", familleId: "epice-piment" },
+  { id: "habanero", label: "Habanero", familleId: "epice-piment" },
+  { id: "cayenne", label: "Piment de Cayenne", familleId: "epice-piment" },
+  { id: "espelette", label: "Piment d'Espelette", familleId: "epice-piment" },
+  { id: "hot-spicy", label: "Hot & Spicy", familleId: "epice-piment" },
+  { id: "sriracha", label: "Sriracha", familleId: "epice-piment" },
+  { id: "wasabi", label: "Wasabi", familleId: "epice-piment" },
+  // Vinaigre / acidulé
+  { id: "vinaigre", label: "Vinaigre", familleId: "vinaigre-acidule" },
+  { id: "sel-vinaigre", label: "Sel & vinaigre", familleId: "vinaigre-acidule" },
+  { id: "vinaigre-balsamique", label: "Vinaigre balsamique", familleId: "vinaigre-acidule" },
+  { id: "citron", label: "Citron", familleId: "vinaigre-acidule" },
+  { id: "citron-vert", label: "Citron vert", familleId: "vinaigre-acidule" },
+  { id: "pickles", label: "Pickles", familleId: "vinaigre-acidule" },
+  { id: "cornichon", label: "Cornichon", familleId: "vinaigre-acidule" },
+  { id: "moutarde", label: "Moutarde", familleId: "vinaigre-acidule" },
+  { id: "moutarde-ancienne", label: "Moutarde à l'ancienne", familleId: "vinaigre-acidule" },
+  // Premium
+  { id: "truffe", label: "Truffe", familleId: "premium" },
+  { id: "truffe-noire", label: "Truffe noire", familleId: "premium" },
+  { id: "truffe-blanche", label: "Truffe blanche", familleId: "premium" },
+  { id: "cepes", label: "Cèpes", familleId: "premium" },
+  { id: "champignons", label: "Champignons", familleId: "premium" },
+  { id: "foie-gras", label: "Foie gras", familleId: "premium" },
+  { id: "parmesan-truffe", label: "Parmesan & truffe", familleId: "premium" },
+  { id: "herbes-provence", label: "Herbes de Provence", familleId: "premium" },
+  { id: "romarin", label: "Romarin", familleId: "premium" },
+  { id: "huile-olive", label: "Huile d'olive", familleId: "premium" },
+  { id: "tomate-basilic", label: "Tomate & basilic", familleId: "premium" },
+  // Internationales
+  { id: "curry", label: "Curry", familleId: "internationale" },
+  { id: "curry-thai", label: "Curry thaï", familleId: "internationale" },
+  { id: "tikka-masala", label: "Tikka Masala", familleId: "internationale" },
+  { id: "teriyaki", label: "Teriyaki", familleId: "internationale" },
+  { id: "yakitori", label: "Yakitori", familleId: "internationale" },
+  { id: "kimchi", label: "Kimchi", familleId: "internationale" },
+  { id: "soja", label: "Soja", familleId: "internationale" },
+  { id: "miso", label: "Miso", familleId: "internationale" },
+  { id: "kebab", label: "Kebab", familleId: "internationale" },
+  { id: "tacos", label: "Tacos", familleId: "internationale" },
+  { id: "pizza", label: "Pizza", familleId: "internationale" },
+  { id: "burger", label: "Burger", familleId: "internationale" },
+  { id: "hot-dog", label: "Hot Dog", familleId: "internationale" },
+  { id: "buffalo", label: "Buffalo", familleId: "internationale" },
+  { id: "tex-mex", label: "Tex-Mex", familleId: "internationale" },
+  { id: "salsa", label: "Salsa", familleId: "internationale" },
+  { id: "guacamole", label: "Guacamole", familleId: "internationale" },
+  // WTF
+  { id: "oeuf", label: "Œuf", familleId: "wtf" },
+  { id: "crevette", label: "Crevette", familleId: "wtf" },
+  { id: "crabe", label: "Crabe", familleId: "wtf" },
+  { id: "homard", label: "Homard", familleId: "wtf" },
+  { id: "huitre", label: "Huître", familleId: "wtf" },
+  { id: "algues", label: "Algues", familleId: "wtf" },
+  { id: "calamar", label: "Calamar", familleId: "wtf" },
+  { id: "poulpe", label: "Poulpe", familleId: "wtf" },
+  { id: "caviar", label: "Caviar", familleId: "wtf" },
+  { id: "cola", label: "Cola", familleId: "wtf" },
+  { id: "chocolat", label: "Chocolat", familleId: "wtf" },
+  { id: "miel", label: "Miel", familleId: "wtf" },
+  { id: "erable", label: "Érable", familleId: "wtf" },
+  { id: "cannelle", label: "Cannelle", familleId: "wtf" },
+  { id: "saveur-inconnue", label: "Saveur inconnue", familleId: "wtf" }
+];
+
+/* ---------- Niveaux de piquant ---------- */
+const NIVEAUX_PIQUANT = [
+  { valeur: 0, label: "Aucun", emoji: "" },
+  { valeur: 1, label: "Très léger", emoji: "🌶️" },
+  { valeur: 2, label: "Léger", emoji: "🌶️🌶️" },
+  { valeur: 3, label: "Piquant", emoji: "🌶️🌶️🌶️" },
+  { valeur: 4, label: "Très piquant", emoji: "🌶️🌶️🌶️🌶️" },
+  { valeur: 5, label: "Violence gratuite", emoji: "🌶️🌶️🌶️🌶️🌶️" }
+];
+
+/* ---------- Critères de dégustation ---------- */
+const CRITERES = [
+  { id: "gout", label: "Goût", description: "Le plaisir gustatif général." },
+  { id: "texture", label: "Texture / croustillant", description: "Qualité du croquant et sensation en bouche." },
+  { id: "fidelite", label: "Fidélité de la saveur", description: "Est-ce que le goût annoncé sur le paquet correspond réellement à ce que l'on mange ?" },
+  { id: "intensite", label: "Intensité", description: "La saveur est-elle suffisamment présente ?" },
+  { id: "originalite", label: "Originalité", description: "La chips apporte-t-elle quelque chose de différent ?" },
+  { id: "addictivite", label: "Addictivité", description: "Est-ce qu'on a immédiatement envie d'en reprendre une ?" },
+  { id: "qualite_prix", label: "Rapport qualité / prix", description: "" }
+];
+
+/* ---------- Racheter ---------- */
+const RACHETER_OPTIONS = [
+  { id: "oui", label: "Oui, sans hésiter", emoji: "😍" },
+  { id: "peut-etre", label: "Peut-être", emoji: "🤔" },
+  { id: "non", label: "Non", emoji: "❌" }
+];
+
+/* ---------- Survie du paquet ---------- */
+const SURVIE_PAQUET = [
+  { valeur: 1, label: "Plusieurs jours" },
+  { valeur: 2, label: "Ça va" },
+  { valeur: 3, label: "Il commence à être en danger" },
+  { valeur: 4, label: "Très peu de chances" },
+  { valeur: 5, label: "Le paquet est déjà mort" }
+];
+
+/* ---------- Contextes de consommation ---------- */
+const CONTEXTES = [
+  { id: "apero", label: "Apéro" },
+  { id: "film-serie", label: "Film / série" },
+  { id: "biere", label: "Bière" },
+  { id: "soda", label: "Soda" },
+  { id: "sandwich", label: "Sandwich" },
+  { id: "burger", label: "Burger" },
+  { id: "seule", label: "Seule" },
+  { id: "soiree", label: "Soirée" },
+  { id: "autre-contexte", label: "Autre" }
+];
+
+/* ---------- Seuils de verdict automatique (modifiables) ---------- */
+const SEUILS_VERDICT = [
+  { min: 9.0, max: 10.01, label: "LÉGENDAIRE", emoji: "👑" },
+  { min: 8.0, max: 9.0, label: "BANGER", emoji: "🔥" },
+  { min: 7.0, max: 8.0, label: "TRÈS SOLIDE", emoji: "😋" },
+  { min: 6.0, max: 7.0, label: "ÇA PASSE BIEN", emoji: "👍" },
+  { min: 5.0, max: 6.0, label: "BOF", emoji: "😐" },
+  { min: 4.0, max: 5.0, label: "COMPLIQUÉ", emoji: "😬" },
+  { min: -0.01, max: 4.0, label: "CRIME CONTRE LA PATATE", emoji: "🚨" }
+];
+
+function getVerdict(note) {
+  if (note == null || isNaN(note)) return { label: "—", emoji: "❓" };
+  const seuils = Store.getSeuils();
+  for (const s of seuils) {
+    if (note >= s.min && note < s.max) return s;
+  }
+  return seuils[seuils.length - 1];
+}
+
+/* ---------- Modes de dégustation ---------- */
+const MODES_DEGUSTATION = [
+  { id: "classique", label: "Classique", description: "Les informations de la chips sont visibles." },
+  { id: "aveugle", label: "À l'aveugle", description: "La marque et la saveur sont cachées pendant le vote et révélées seulement après validation des notes." }
+];
+
+/* ---------- Helpers ---------- */
+function uid(prefix) {
+  return (prefix ? prefix + "_" : "") + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+}
+
+function findById(list, id) {
+  return list.find((x) => x.id === id);
+}
+
+function labelOf(list, id, fallback) {
+  const item = findById(list, id);
+  return item ? item.label : (fallback || id || "—");
+}
+
+
+/* ===== js/store.js ===== */
+/* ============================================================
+   CHIP CLUB — store.js
+   Couche de persistance localStorage.
+   Schéma pensé "table par table" pour faciliter une migration
+   future vers Supabase (chaque collection = future table SQL,
+   chaque id = future clé primaire, chaque *_id = future clé étrangère).
+   ============================================================ */
+
+const STORAGE_KEY = "chipclub_v1";
+
+/* Le club fondateur : ces dégustateurs sont créés automatiquement au premier
+   lancement, pour ne pas avoir à les ressaisir à chaque nouvelle soirée. */
+const DEFAULT_TASTERS = [
+  { nom: "Benjamin", avatarEmoji: "🦊" },
+  { nom: "Adam", avatarEmoji: "🐺" },
+  { nom: "Pierre Louis", avatarEmoji: "🦁" },
+  { nom: "Carla", avatarEmoji: "🐼" }
+];
+
+const DEFAULT_STATE = {
+  meta: {
+    version: 1,
+    createdAt: null
+  },
+  degustateurs: [],   // { id, nom, avatarEmoji, createdAt }
+  marques: [],        // { id, nom }
+  saveursPerso: [],    // saveurs personnalisées ajoutées par l'utilisateur, même forme que SAVEURS
+  famillesPerso: [],   // familles de chips personnalisées, même forme que FAMILLES
+  soirees: [],         // { id, nom, date, participantsIds[], mode, createdAt }
+  chips: [],           // fiche produit (identité + classification), voir schéma plus bas
+  degustations: [],    // une dégustation = une chips dans une soirée: { id, soireeId, chipId, revele, createdAt }
+  notes: [],           // { id, degustationId, degustateurId, criteres:{...}, racheter, survie, contextes[], commentaire, createdAt }
+  seuils: null,        // override des seuils de verdict, sinon défault
+  settings: {
+    demoLoaded: false
+  }
+};
+
+/* Schéma d'une "chips" (fiche produit) :
+{
+  id, createdAt,
+  photo: dataURL|null,
+  marque, nomCommercial, saveurId, saveurLabel, saveurFamilleId,
+  gamme, paysOrigine, magasin, prix, poids,
+  familleId, formeId, cuissonId,
+  piquant: 0-5,
+  isDemo: bool
+}
+*/
+
+const Store = {
+  _state: null,
+
+  load() {
+    if (this._state) return this._state;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        this._state = JSON.parse(raw);
+        // merge defaults for forward-compat (nouvelles clés ajoutées après coup)
+        this._state = Object.assign({}, DEFAULT_STATE, this._state);
+        for (const k of Object.keys(DEFAULT_STATE)) {
+          if (this._state[k] === undefined) this._state[k] = DEFAULT_STATE[k];
+        }
+      } else {
+        this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        this._state.meta.createdAt = new Date().toISOString();
+        this._seedDefaultTasters();
+        this.save();
+      }
+    } catch (e) {
+      console.error("Erreur de lecture du stockage, réinitialisation.", e);
+      this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      this._state.meta.createdAt = new Date().toISOString();
+      this._seedDefaultTasters();
+      this.save();
+    }
+    return this._state;
+  },
+
+  save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state));
+    } catch (e) {
+      console.error("Erreur d'écriture du stockage", e);
+      alert("Impossible de sauvegarder : stockage plein ou indisponible.");
+    }
+  },
+
+  reset() {
+    this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    this._state.meta.createdAt = new Date().toISOString();
+    this._seedDefaultTasters();
+    this.save();
+  },
+
+  _seedDefaultTasters() {
+    for (const t of DEFAULT_TASTERS) {
+      if (!this._state.degustateurs.some((d) => d.nom.toLowerCase() === t.nom.toLowerCase())) {
+        this._state.degustateurs.push({
+          id: uid("taster"), nom: t.nom, avatarEmoji: t.avatarEmoji,
+          createdAt: new Date().toISOString(), isDemo: false
+        });
+      }
+    }
+  },
+
+  /* ---------- Dégustateurs ---------- */
+  getDegustateurs() {
+    return this.load().degustateurs;
+  },
+  addDegustateur(nom, avatarEmoji) {
+    const s = this.load();
+    let existing = s.degustateurs.find((d) => d.nom.toLowerCase() === nom.toLowerCase());
+    if (existing) return existing;
+    const d = { id: uid("taster"), nom, avatarEmoji: avatarEmoji || pickAvatar(nom), createdAt: new Date().toISOString() };
+    s.degustateurs.push(d);
+    this.save();
+    return d;
+  },
+  getDegustateur(id) {
+    return this.load().degustateurs.find((d) => d.id === id);
+  },
+
+  /* ---------- Marques ---------- */
+  addMarque(nom) {
+    const s = this.load();
+    let existing = s.marques.find((m) => m.nom.toLowerCase() === nom.toLowerCase());
+    if (existing) return existing;
+    const m = { id: uid("brand"), nom };
+    s.marques.push(m);
+    this.save();
+    return m;
+  },
+  getMarques() {
+    return this.load().marques;
+  },
+
+  /* ---------- Saveurs personnalisées ---------- */
+  addSaveurPerso(label, familleId) {
+    const s = this.load();
+    const id = "perso-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
+    let existing = s.saveursPerso.find((sv) => sv.id === id);
+    if (existing) return existing;
+    const sv = { id, label, familleId };
+    s.saveursPerso.push(sv);
+    this.save();
+    return sv;
+  },
+  getAllSaveurs() {
+    return SAVEURS.concat(this.load().saveursPerso);
+  },
+
+  /* ---------- Familles personnalisées ---------- */
+  addFamillePerso(label) {
+    const s = this.load();
+    const id = "perso-fam-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
+    let existing = s.famillesPerso.find((f) => f.id === id);
+    if (existing) return existing;
+    const f = { id, label, emoji: "❓" };
+    s.famillesPerso.push(f);
+    this.save();
+    return f;
+  },
+  getAllFamilles() {
+    return FAMILLES.concat(this.load().famillesPerso);
+  },
+
+  /* ---------- Soirées ---------- */
+  addSoiree(soiree) {
+    const s = this.load();
+    const o = Object.assign({ id: uid("night"), createdAt: new Date().toISOString() }, soiree);
+    s.soirees.push(o);
+    this.save();
+    return o;
+  },
+  getSoirees() {
+    return this.load().soirees.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+  },
+  getSoiree(id) {
+    return this.load().soirees.find((s) => s.id === id);
+  },
+
+  /* ---------- Chips (fiches produit) ---------- */
+  addChip(chip) {
+    const s = this.load();
+    const c = Object.assign({ id: uid("chip"), createdAt: new Date().toISOString() }, chip);
+    s.chips.push(c);
+    this.save();
+    return c;
+  },
+  getChips() {
+    return this.load().chips;
+  },
+  getChip(id) {
+    return this.load().chips.find((c) => c.id === id);
+  },
+
+  /* ---------- Dégustations (chips x soirée) ---------- */
+  addDegustation(deg) {
+    const s = this.load();
+    const d = Object.assign({ id: uid("tasting"), revele: false, createdAt: new Date().toISOString() }, deg);
+    s.degustations.push(d);
+    this.save();
+    return d;
+  },
+  getDegustations() {
+    return this.load().degustations;
+  },
+  getDegustation(id) {
+    return this.load().degustations.find((d) => d.id === id);
+  },
+  getDegustationsBySoiree(soireeId) {
+    return this.load().degustations.filter((d) => d.soireeId === soireeId);
+  },
+  revelerDegustation(id) {
+    const s = this.load();
+    const d = s.degustations.find((x) => x.id === id);
+    if (d) { d.revele = true; this.save(); }
+    return d;
+  },
+
+  /* ---------- Notes individuelles ---------- */
+  addNote(note) {
+    const s = this.load();
+    const n = Object.assign({ id: uid("note"), createdAt: new Date().toISOString() }, note);
+    s.notes.push(n);
+    this.save();
+    return n;
+  },
+  getNotes() {
+    return this.load().notes;
+  },
+  getNotesByDegustation(degustationId) {
+    return this.load().notes.filter((n) => n.degustationId === degustationId);
+  },
+  getNotesByDegustateur(degustateurId) {
+    return this.load().notes.filter((n) => n.degustateurId === degustateurId);
+  },
+
+  /* ---------- Seuils verdict ---------- */
+  getSeuils() {
+    const s = this.load();
+    return s.seuils && s.seuils.length ? s.seuils : SEUILS_VERDICT;
+  },
+  setSeuils(seuils) {
+    const s = this.load();
+    s.seuils = seuils;
+    this.save();
+  },
+
+  /* ---------- Export / Import / Reset ---------- */
+  exportJSON() {
+    return JSON.stringify(this.load(), null, 2);
+  },
+  importJSON(json) {
+    const parsed = JSON.parse(json);
+    this._state = Object.assign({}, DEFAULT_STATE, parsed);
+    this.save();
+  },
+
+  /* ---------- Démo ---------- */
+  isDemoLoaded() {
+    return !!this.load().settings.demoLoaded;
+  },
+  setDemoLoaded(v) {
+    const s = this.load();
+    s.settings.demoLoaded = v;
+    this.save();
+  },
+  removeDemoData() {
+    const s = this.load();
+    const demoChipIds = s.chips.filter((c) => c.isDemo).map((c) => c.id);
+    const demoSoireeIds = s.soirees.filter((so) => so.isDemo).map((so) => so.id);
+    const demoDegIds = s.degustations.filter((d) => demoChipIds.includes(d.chipId) || demoSoireeIds.includes(d.soireeId)).map((d) => d.id);
+    s.notes = s.notes.filter((n) => !demoDegIds.includes(n.degustationId));
+    s.degustations = s.degustations.filter((d) => !demoDegIds.includes(d.id));
+    s.chips = s.chips.filter((c) => !c.isDemo);
+    s.soirees = s.soirees.filter((so) => !so.isDemo);
+    s.degustateurs = s.degustateurs.filter((d) => !d.isDemo);
+    s.settings.demoLoaded = false;
+    this.save();
+  }
+};
+
+const AVATAR_EMOJIS = ["🦊", "🐼", "🐸", "🐨", "🦁", "🐵", "🐺", "🦝", "🐯", "🐰", "🦄", "🐷"];
+function pickAvatar(nom) {
+  let hash = 0;
+  for (let i = 0; i < nom.length; i++) hash = (hash * 31 + nom.charCodeAt(i)) % AVATAR_EMOJIS.length;
+  return AVATAR_EMOJIS[Math.abs(hash) % AVATAR_EMOJIS.length];
+}
+
+
+/* ===== js/calc.js ===== */
+/* ============================================================
+   CHIP CLUB — calc.js
+   Toutes les fonctions de calcul : moyennes, classement,
+   hall of fame, profils, stats, chip battle.
+   Rien ici ne touche au DOM.
+   ============================================================ */
+
+const Calc = {
+
+  /* Moyenne d'un critère pour une dégustation donnée (toutes notes confondues) */
+  degustationCriteriaAvg(degustationId, critereId) {
+    const notes = Store.getNotesByDegustation(degustationId);
+    if (!notes.length) return null;
+    const vals = notes.map((n) => n.criteres[critereId]).filter((v) => v != null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  },
+
+  /* Note globale d'une dégustation = moyenne des moyennes-participant sur GOUT
+     mais la "Note Chip Club" spec = moyenne des moyennes-participants (moyenne
+     de la moyenne globale /10 par participant, calculée sur l'ensemble des critères) */
+  degustateurMoyenne(degustationId, degustateurId) {
+    const notes = Store.getNotesByDegustation(degustationId).filter((n) => n.degustateurId === degustateurId);
+    if (!notes.length) return null;
+    // moyenne de tous les critères pour ce participant sur cette dégustation (normalement 1 note)
+    const n = notes[notes.length - 1];
+    const vals = CRITERES.map((c) => n.criteres[c.id]).filter((v) => v != null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  },
+
+  /* Note Chip Club = moyenne des moyennes de chaque dégustateur */
+  noteChipClub(degustationId) {
+    const notes = Store.getNotesByDegustation(degustationId);
+    if (!notes.length) return null;
+    const ids = [...new Set(notes.map((n) => n.degustateurId))];
+    const moyennes = ids.map((id) => this.degustateurMoyenne(degustationId, id)).filter((v) => v != null);
+    if (!moyennes.length) return null;
+    return moyennes.reduce((a, b) => a + b, 0) / moyennes.length;
+  },
+
+  /* Écart-type simple des moyennes participants -> indicateur "controverse" */
+  ecartControverse(degustationId) {
+    const notes = Store.getNotesByDegustation(degustationId);
+    const ids = [...new Set(notes.map((n) => n.degustateurId))];
+    const moyennes = ids.map((id) => this.degustateurMoyenne(degustationId, id)).filter((v) => v != null);
+    if (moyennes.length < 2) return 0;
+    return Math.max(...moyennes) - Math.min(...moyennes);
+  },
+
+  /* Prix / 100g pour une chip */
+  prixPour100g(chip) {
+    const prix = parseFloat(chip.prix);
+    const poids = parseFloat(chip.poids);
+    if (!prix || !poids) return null;
+    return (prix / poids) * 100;
+  },
+
+  /* Construit une "row" enrichie pour une dégustation donnée (utilisée partout) */
+  buildRow(degustation) {
+    const chip = Store.getChip(degustation.chipId);
+    if (!chip) return null;
+    const note = this.noteChipClub(degustation.id);
+    const row = {
+      degustation, chip,
+      note,
+      verdict: getVerdict(note),
+      controverse: this.ecartControverse(degustation.id),
+      prix100g: this.prixPour100g(chip)
+    };
+    for (const c of CRITERES) {
+      row[c.id] = this.degustationCriteriaAvg(degustation.id, c.id);
+    }
+    return row;
+  },
+
+  allRows() {
+    return Store.getDegustations()
+      .map((d) => this.buildRow(d))
+      .filter((r) => r && r.note != null);
+  },
+
+  /* ---------- Classement / filtres ---------- */
+  classement(sortKey = "note", famille = null, marque = null, familleSaveur = null) {
+    let rows = this.allRows();
+    if (famille) rows = rows.filter((r) => r.chip.familleId === famille);
+    if (marque) rows = rows.filter((r) => r.chip.marque === marque);
+    if (familleSaveur) rows = rows.filter((r) => r.chip.saveurFamilleId === familleSaveur);
+    rows.sort((a, b) => {
+      if (sortKey === "prix100g") return (a.prix100g ?? 1e9) - (b.prix100g ?? 1e9);
+      if (sortKey === "date") return new Date(b.chip.createdAt) - new Date(a.chip.createdAt);
+      if (sortKey === "piquant") return (b.chip.piquant || 0) - (a.chip.piquant || 0);
+      const av = a[sortKey], bv = b[sortKey];
+      return (bv ?? -1) - (av ?? -1);
+    });
+    return rows;
+  },
+
+  /* ---------- Hall of Fame ---------- */
+  hallOfFame() {
+    const rows = this.allRows();
+    if (!rows.length) return null;
+    const best = (key) => rows.slice().sort((a, b) => (b[key] ?? -1) - (a[key] ?? -1))[0];
+    const worst = (key) => rows.slice().sort((a, b) => (a[key] ?? 999) - (b[key] ?? 999))[0];
+    const withPrix = rows.filter((r) => r.prix100g != null);
+    const bestValue = withPrix.length
+      ? withPrix.slice().sort((a, b) => (b.note / b.prix100g) - (a.note / a.prix100g))[0]
+      : null;
+    return {
+      meilleure: best("note"),
+      pire: worst("note"),
+      addictive: best("addictivite"),
+      originale: best("originalite"),
+      qualitePrix: bestValue,
+      meilleurGout: best("gout"),
+      meilleureTexture: best("texture"),
+      plusFidele: best("fidelite"),
+      plusPiquante: rows.slice().sort((a, b) => (b.chip.piquant || 0) - (a.chip.piquant || 0))[0],
+      controversee: rows.slice().sort((a, b) => b.controverse - a.controverse)[0]
+    };
+  },
+
+  /* ---------- Profil dégustateur ---------- */
+  profil(degustateurId) {
+    const allNotes = Store.getNotesByDegustateur(degustateurId);
+    if (!allNotes.length) return null;
+    const rows = allNotes.map((n) => {
+      const deg = Store.getDegustation(n.degustationId);
+      const chip = deg ? Store.getChip(deg.chipId) : null;
+      if (!chip) return null;
+      const vals = CRITERES.map((c) => n.criteres[c.id]).filter((v) => v != null);
+      const moyenne = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      return { note: n, deg, chip, moyenne };
+    }).filter(Boolean);
+
+    const nbChips = rows.length;
+    const moyenneDonnee = rows.reduce((a, r) => a + (r.moyenne || 0), 0) / nbChips;
+
+    const parSaveur = {};
+    const parFamille = {};
+    const parMarque = {};
+    for (const r of rows) {
+      const sav = r.chip.saveurLabel || "?";
+      parSaveur[sav] = parSaveur[sav] || [];
+      parSaveur[sav].push(r.moyenne);
+      const fam = labelOf(Store.getAllFamilles(), r.chip.familleId);
+      parFamille[fam] = parFamille[fam] || [];
+      parFamille[fam].push(r.moyenne);
+      const marque = r.chip.marque || "?";
+      parMarque[marque] = parMarque[marque] || [];
+      parMarque[marque].push(r.moyenne);
+    }
+    const avgMap = (map) => Object.entries(map).map(([k, v]) => ({ label: k, avg: v.reduce((a, b) => a + b, 0) / v.length, n: v.length }));
+    const saveurPref = avgMap(parSaveur).sort((a, b) => b.avg - a.avg)[0];
+    const saveurMoins = avgMap(parSaveur).sort((a, b) => a.avg - b.avg)[0];
+    const famillePref = avgMap(parFamille).sort((a, b) => b.avg - a.avg)[0];
+    const marquesPref = avgMap(parMarque).sort((a, b) => b.avg - a.avg).slice(0, 5);
+    const saveursPref = avgMap(parSaveur).sort((a, b) => b.avg - a.avg).slice(0, 5);
+
+    const racheteOui = rows.filter((r) => r.note.racheter === "oui").length;
+    const tauxRachat = nbChips ? (racheteOui / nbChips) * 100 : 0;
+
+    const top5 = rows.slice().sort((a, b) => b.moyenne - a.moyenne).slice(0, 5);
+    const flop5 = rows.slice().sort((a, b) => a.moyenne - b.moyenne).slice(0, 5);
+
+    return {
+      degustateur: Store.getDegustateur(degustateurId),
+      nbChips, moyenneDonnee, saveurPref, saveurMoins, famillePref,
+      marquesPref, saveursPref, tauxRachat, top5, flop5
+    };
+  },
+
+  /* Titres automatiques entre dégustateurs */
+  titres() {
+    const degustateurs = Store.getDegustateurs();
+    const profils = degustateurs.map((d) => this.profil(d.id)).filter(Boolean);
+    if (profils.length < 2) return [];
+    const titres = [];
+    const genereux = profils.slice().sort((a, b) => b.moyenneDonnee - a.moyenneDonnee)[0];
+    titres.push({ emoji: "😇", label: "Le plus généreux", degustateur: genereux.degustateur, detail: genereux.moyenneDonnee.toFixed(1) });
+    const critique = profils.slice().sort((a, b) => a.moyenneDonnee - b.moyenneDonnee)[0];
+    titres.push({ emoji: "🧐", label: "Le critique gastronomique", degustateur: critique.degustateur, detail: critique.moyenneDonnee.toFixed(1) });
+
+    // opposant : le plus souvent en désaccord avec la moyenne du groupe
+    const ecarts = {};
+    for (const d of degustateurs) ecarts[d.id] = [];
+    for (const deg of Store.getDegustations()) {
+      const note = this.noteChipClub(deg.id);
+      if (note == null) continue;
+      for (const n of Store.getNotesByDegustation(deg.id)) {
+        const m = this.degustateurMoyenne(deg.id, n.degustateurId);
+        if (m != null) ecarts[n.degustateurId] && ecarts[n.degustateurId].push(Math.abs(m - note));
+      }
+    }
+    const ecartsAvg = Object.entries(ecarts).filter(([, v]) => v.length).map(([id, v]) => ({ id, avg: v.reduce((a, b) => a + b, 0) / v.length }));
+    if (ecartsAvg.length) {
+      const opposant = ecartsAvg.sort((a, b) => b.avg - a.avg)[0];
+      titres.push({ emoji: "⚔️", label: "L'opposant", degustateur: Store.getDegustateur(opposant.id), detail: "±" + opposant.avg.toFixed(1) });
+    }
+
+    const acheteur = profils.slice().sort((a, b) => b.tauxRachat - a.tauxRachat)[0];
+    titres.push({ emoji: "🛒", label: "L'acheteur compulsif", degustateur: acheteur.degustateur, detail: Math.round(acheteur.tauxRachat) + "%" });
+
+    // plus facile à rendre accro : moyenne addictivité la plus élevée donnée
+    const addictAvg = degustateurs.map((d) => {
+      const notes = Store.getNotesByDegustateur(d.id);
+      const vals = notes.map((n) => n.criteres.addictivite).filter((v) => v != null);
+      return { d, avg: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+    }).filter((x) => x.avg != null);
+    if (addictAvg.length) {
+      const accro = addictAvg.sort((a, b) => b.avg - a.avg)[0];
+      titres.push({ emoji: "🔥", label: "Le plus facile à rendre accro", degustateur: accro.d, detail: accro.avg.toFixed(1) });
+    }
+    return titres;
+  },
+
+  /* ---------- Récap de soirée ---------- */
+  recapSoiree(soireeId) {
+    const soiree = Store.getSoiree(soireeId);
+    if (!soiree) return null;
+    const degs = Store.getDegustationsBySoiree(soireeId);
+    const rows = degs.map((d) => this.buildRow(d)).filter((r) => r && r.note != null);
+    const poidsTotal = rows.reduce((a, r) => a + (parseFloat(r.chip.poids) || 0), 0);
+    const sorted = rows.slice().sort((a, b) => b.note - a.note);
+    return {
+      soiree, rows,
+      nbParticipants: (soiree.participantsIds || []).length,
+      nbPaquets: rows.length,
+      poidsTotalKg: poidsTotal / 1000,
+      gagnante: sorted[0],
+      deuxieme: sorted[1],
+      troisieme: sorted[2],
+      accident: sorted[sorted.length - 1],
+      addictive: rows.slice().sort((a, b) => (b.addictivite ?? -1) - (a.addictivite ?? -1))[0],
+      surprenante: rows.slice().sort((a, b) => (b.originalite ?? -1) - (a.originalite ?? -1))[0],
+      debat: rows.slice().sort((a, b) => b.controverse - a.controverse)[0],
+      qualitePrix: rows.filter((r) => r.prix100g).sort((a, b) => (b.note / b.prix100g) - (a.note / a.prix100g))[0]
+    };
+  },
+
+  /* ---------- Statistiques globales ---------- */
+  statsGlobales() {
+    const chips = Store.getChips();
+    const rows = this.allRows();
+    const soirees = Store.getSoirees();
+    const marquesSet = new Set(chips.map((c) => c.marque).filter(Boolean));
+    const saveursSet = new Set(chips.map((c) => c.saveurId).filter(Boolean));
+    const budgetTotal = chips.reduce((a, c) => a + (parseFloat(c.prix) || 0), 0);
+    const poidsTotal = chips.reduce((a, c) => a + (parseFloat(c.poids) || 0), 0);
+    const prixMoyen = chips.length ? budgetTotal / chips.length : 0;
+    const noteMoyenne = rows.length ? rows.reduce((a, r) => a + r.note, 0) / rows.length : null;
+
+    const groupAvg = (keyFn) => {
+      const map = {};
+      for (const r of rows) {
+        const k = keyFn(r);
+        if (!k) continue;
+        map[k] = map[k] || [];
+        map[k].push(r.note);
+      }
+      return Object.entries(map).map(([k, v]) => ({ label: k, avg: v.reduce((a, b) => a + b, 0) / v.length, n: v.length }));
+    };
+
+    const parMarque = groupAvg((r) => r.chip.marque).sort((a, b) => b.avg - a.avg);
+    const parFamilleSaveur = groupAvg((r) => labelOf(FAMILLES_SAVEUR, r.chip.saveurFamilleId)).sort((a, b) => b.avg - a.avg);
+    const parFamille = groupAvg((r) => labelOf(Store.getAllFamilles(), r.chip.familleId)).sort((a, b) => b.avg - a.avg);
+    const parSaveur = groupAvg((r) => r.chip.saveurLabel).sort((a, b) => b.avg - a.avg);
+    const parMagasin = groupAvg((r) => r.chip.magasin).sort((a, b) => b.avg - a.avg);
+
+    return {
+      nbChips: chips.length, nbMarques: marquesSet.size, nbSaveurs: saveursSet.size,
+      nbSoirees: soirees.length, budgetTotal, poidsTotal, prixMoyen, noteMoyenne,
+      parMarque, parFamilleSaveur, parFamille, parSaveur, parMagasin,
+      saveurPreferee: parSaveur[0], familleSaveurPreferee: parFamilleSaveur[0],
+      famillePreferee: parFamille[0], marquePreferee: parMarque[0],
+      saveurMoinsAimee: parSaveur.slice().sort((a, b) => a.avg - b.avg)[0],
+      meilleurMagasin: parMagasin[0],
+      rows
+    };
+  },
+
+  /* Phrases fun générées seulement si calculables */
+  phrasesFun() {
+    const phrases = [];
+    const stats = this.statsGlobales();
+    if (stats.poidsTotal > 0) {
+      phrases.push(`Vous avez dégusté ${(stats.poidsTotal / 1000).toFixed(1)} kg de chips.`);
+    }
+    if (stats.budgetTotal > 0) {
+      phrases.push(`Vous avez dépensé ${stats.budgetTotal.toFixed(2)} € pour la science.`);
+    }
+    const bbq = stats.parFamilleSaveur.find((f) => f.label === "Barbecue / fumé");
+    const vin = stats.parFamilleSaveur.find((f) => f.label === "Vinaigre / acidulé");
+    if (bbq && vin) {
+      const diff = bbq.avg - vin.avg;
+      phrases.push(`Le barbecue obtient en moyenne ${Math.abs(diff).toFixed(1)} point${Math.abs(diff) >= 2 ? "s" : ""} ${diff >= 0 ? "de plus" : "de moins"} que le vinaigre.`);
+    }
+    for (const d of Store.getDegustateurs()) {
+      const notes = Store.getNotesByDegustateur(d.id);
+      if (notes.length < 3) continue;
+      const vals = notes.map((n) => {
+        const vs = CRITERES.map((c) => n.criteres[c.id]).filter((v) => v != null);
+        return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+      }).filter((v) => v != null);
+      if (!vals.length || stats.noteMoyenne == null) continue;
+      const perso = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const diff = perso - stats.noteMoyenne;
+      if (Math.abs(diff) >= 0.3) {
+        phrases.push(`${d.nom} note en moyenne ${Math.abs(diff).toFixed(1)} point ${diff < 0 ? "plus sévèrement" : "plus généreusement"} que le groupe.`);
+      }
+    }
+    const rows = stats.rows;
+    const plus8 = rows.filter((r) => r.note > 8);
+    if (plus8.length >= 3) {
+      const notesAvecRachat = plus8.filter((r) => {
+        const notes = Store.getNotesByDegustation(r.degustation.id);
+        return notes.some((n) => n.racheter === "oui");
+      });
+      const pct = (notesAvecRachat.length / plus8.length) * 100;
+      phrases.push(`${Math.round(pct)} % des chips notées plus de 8/10 ont été rachetées.`);
+    }
+    return phrases;
+  },
+
+  /* ---------- Chip Battle ---------- */
+  battleRow(chipId) {
+    const deg = Store.getDegustations().find((d) => d.chipId === chipId);
+    if (!deg) return null;
+    return this.buildRow(deg);
+  }
+};
+
+
+/* ===== js/demo.js ===== */
+/* ============================================================
+   CHIP CLUB — demo.js
+   Génère des données de démonstration : 4 dégustateurs,
+   2 soirées, 10+ chips variées avec notes complètes.
+   ============================================================ */
+
+const Demo = {
+  load() {
+    const s = Store.load();
+
+    // Dégustateurs : on réutilise le club fondateur déjà présent (Benjamin,
+    // Adam, Pierre Louis, Carla) plutôt que de créer des doublons de démo.
+    const tasters = DEFAULT_TASTERS.map((n) => Store.addDegustateur(n.nom, n.avatarEmoji));
+
+    const chipsData = [
+      { marque: "Lay's", nomCommercial: "Classic", saveurId: "nature", familleId: "pdt-classique", formeId: "fine-classique", cuissonId: "frite-classique", pays: "France", magasin: "Carrefour", prix: 1.99, poids: 130, piquant: 0 },
+      { marque: "Lorenz", nomCommercial: "Crunchips", saveurId: "barbecue", familleId: "pdt-ondulee", formeId: "ondulee", cuissonId: "frite-classique", pays: "Allemagne", magasin: "Leclerc", prix: 2.29, poids: 150, piquant: 1 },
+      { marque: "Tyrrell's", nomCommercial: "Hand Cooked", saveurId: "sel-vinaigre", familleId: "pdt-epaisse", formeId: "epaisse", cuissonId: "kettle", pays: "Royaume-Uni", magasin: "Monoprix", prix: 3.49, poids: 150, piquant: 0 },
+      { marque: "Brets", nomCommercial: "Rôtisserie", saveurId: "poulet-roti", familleId: "pdt-artisanale", formeId: "irreguliere", cuissonId: "chaudron", pays: "France", magasin: "Intermarché", prix: 2.79, poids: 125, piquant: 0 },
+      { marque: "Tyrrell's", nomCommercial: "Truffle", saveurId: "truffe-noire", familleId: "pdt-artisanale", formeId: "epaisse", cuissonId: "kettle", pays: "Royaume-Uni", magasin: "Monoprix", prix: 4.99, poids: 150, piquant: 0, gamme: "Premium" },
+      { marque: "Doritos", nomCommercial: "Tortilla", saveurId: "cheddar", familleId: "tortilla-mais", formeId: "triangle", cuissonId: "frite-classique", pays: "Belgique", magasin: "Carrefour", prix: 2.49, poids: 170, piquant: 1 },
+      { marque: "Doritos", nomCommercial: "Tortilla", saveurId: "sweet-chili", familleId: "tortilla-mais", formeId: "triangle", cuissonId: "frite-classique", pays: "Belgique", magasin: "Carrefour", prix: 2.49, poids: 170, piquant: 2 },
+      { marque: "Tostitos", nomCommercial: "Hint of Jalapeño", saveurId: "jalapeno", familleId: "tortilla-triangle", formeId: "triangle", cuissonId: "frite-classique", pays: "États-Unis", magasin: "Grand Frais", prix: 3.19, poids: 185, piquant: 3 },
+      { marque: "Lay's", nomCommercial: "Strong", saveurId: "sour-cream-onion", familleId: "pdt-classique", formeId: "fine-classique", cuissonId: "frite-classique", pays: "France", magasin: "Carrefour", prix: 1.99, poids: 130, piquant: 0 },
+      { marque: "Croky", nomCommercial: "Mystère", saveurId: "saveur-inconnue", familleId: "pdt-ondulee", formeId: "ondulee", cuissonId: "frite-classique", pays: "Belgique", magasin: "Aldi", prix: 1.49, poids: 150, piquant: 0, gamme: "Édition limitée WTF" },
+      { marque: "Kettle Chips", nomCommercial: "Sea Salt", saveurId: "sel-mer", familleId: "pdt-epaisse", formeId: "epaisse", cuissonId: "kettle", pays: "Royaume-Uni", magasin: "Biocoop", prix: 2.99, poids: 130, piquant: 0 },
+      { marque: "Vico", nomCommercial: "Chips de Légumes", saveurId: "herbes-provence", familleId: "legumes", formeId: "fine-classique", cuissonId: "four", pays: "France", magasin: "Leclerc", prix: 2.19, poids: 100, piquant: 0 }
+    ];
+
+    const chips = chipsData.map((c) => {
+      const chip = {
+        id: uid("chip"),
+        createdAt: new Date().toISOString(),
+        photo: null,
+        marque: c.marque,
+        nomCommercial: c.nomCommercial,
+        saveurId: c.saveurId,
+        saveurLabel: labelOf(SAVEURS, c.saveurId),
+        saveurFamilleId: (findById(SAVEURS, c.saveurId) || {}).familleId,
+        gamme: c.gamme || "",
+        paysOrigine: c.pays,
+        magasin: c.magasin,
+        prix: c.prix,
+        poids: c.poids,
+        familleId: c.familleId,
+        formeId: c.formeId,
+        cuissonId: c.cuissonId,
+        piquant: c.piquant,
+        isDemo: true
+      };
+      s.chips.push(chip);
+      return chip;
+    });
+
+    // 2 soirées
+    const soiree1 = {
+      id: uid("night"), nom: "Chip Night #01", date: daysAgo(21),
+      participantsIds: tasters.map((t) => t.id), mode: "classique",
+      createdAt: new Date().toISOString(), isDemo: true
+    };
+    const soiree2 = {
+      id: uid("night"), nom: "Chip Night #02", date: daysAgo(5),
+      participantsIds: tasters.map((t) => t.id), mode: "aveugle",
+      createdAt: new Date().toISOString(), isDemo: true
+    };
+    s.soirees.push(soiree1, soiree2);
+
+    const contextesPool = ["apero", "film-serie", "biere", "soiree"];
+    const commentaires = [
+      "Le goût barbecue arrive avec trois chips de retard.",
+      "Incroyable pendant 30 secondes puis beaucoup trop salée.",
+      "Je pourrais finir le paquet avant que les autres aient voté.",
+      "Le poulet n'a visiblement pas été consulté pour cette recette.",
+      "Un classique qui ne déçoit jamais.",
+      "Trop discret, on dirait des chips nature déguisées.",
+      "La truffe justifie presque le prix. Presque.",
+      "Attention, paquet en voie de disparition.",
+      "Verdict unanime : on en reprend.",
+      "Ça pique plus que prévu, respect.",
+      "Le sachet a fini vide avant le générique.",
+      "On dirait un accident de laboratoire, mais un bon accident."
+    ];
+
+    // Répartir les 12 chips sur les deux soirées (6 chacune)
+    chips.forEach((chip, i) => {
+      const soiree = i < 6 ? soiree1 : soiree2;
+      const deg = {
+        id: uid("tasting"), soireeId: soiree.id, chipId: chip.id,
+        revele: true, createdAt: new Date().toISOString()
+      };
+      s.degustations.push(deg);
+
+      // notes de chaque dégustateur avec un peu de variabilité réaliste
+      const base = 4.5 + Math.random() * 5; // profil de qualité de la chips
+      tasters.forEach((t, ti) => {
+        const perso = (Math.random() - 0.5) * 2.2; // variabilité individuelle
+        const clamp = (v) => Math.max(0, Math.min(10, Math.round((v + perso) * 10) / 10));
+        const criteres = {
+          gout: clamp(base),
+          texture: clamp(base + (Math.random() - 0.5) * 2),
+          fidelite: clamp(base + (Math.random() - 0.5) * 2),
+          intensite: clamp(base + (Math.random() - 0.5) * 2),
+          originalite: clamp(chip.saveurId === "saveur-inconnue" || chip.saveurId === "truffe-noire" ? base + 1.5 : base),
+          addictivite: clamp(base + (Math.random() - 0.5) * 2),
+          qualite_prix: clamp(base - (chip.prix > 3 ? 1 : 0))
+        };
+        const rachAvg = (criteres.gout + criteres.addictivite) / 2;
+        const racheter = rachAvg >= 7 ? "oui" : rachAvg >= 5 ? "peut-etre" : "non";
+        s.notes.push({
+          id: uid("note"),
+          degustationId: deg.id,
+          degustateurId: t.id,
+          criteres,
+          racheter,
+          survie: Math.min(5, Math.max(1, Math.round(6 - rachAvg / 2))),
+          contextes: [contextesPool[Math.floor(Math.random() * contextesPool.length)]],
+          commentaire: ti === 0 ? commentaires[Math.floor(Math.random() * commentaires.length)] : "",
+          createdAt: new Date().toISOString()
+        });
+      });
+    });
+
+    s.settings.demoLoaded = true;
+    Store.save();
+  }
+};
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+
+/* ===== js/app.js ===== */
+/* ============================================================
+   CHIP CLUB — app.js
+   Router + vues + logique d'interface.
+   ============================================================ */
+
+const $app = () => document.getElementById("app");
+const fmt = (n, d = 1) => (n == null || isNaN(n) ? "—" : n.toFixed(d).replace(".", ","));
+const fmtEUR = (n) => (n == null || isNaN(n) ? "—" : n.toFixed(2).replace(".", ",") + " €");
+const escapeHTML = (s) => (s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const App = {
+  wizard: null, // état volatile de la dégustation en cours
+
+  init() {
+    Store.load();
+    window.addEventListener("hashchange", () => this.route());
+    this.route();
+  },
+
+  route() {
+    const hash = location.hash.slice(1) || "/";
+    const parts = hash.split("/").filter(Boolean);
+    window.scrollTo(0, 0);
+    this.closeMenu();
+
+    if (parts.length === 0) return this.renderDashboard();
+    if (parts[0] === "soiree" && parts[1] === "new") return this.renderSoireeNew();
+    if (parts[0] === "soiree" && parts[2] === "deguster") return this.renderDegustation(parts[1]);
+    if (parts[0] === "soiree" && parts[1]) return this.renderSoireeRecap(parts[1]);
+    if (parts[0] === "soirees") return this.renderSoireesList();
+    if (parts[0] === "chips") return this.renderChipsList();
+    if (parts[0] === "chip" && parts[1]) return this.renderChipDetail(parts[1]);
+    if (parts[0] === "classement") return this.renderClassement();
+    if (parts[0] === "halloffame") return this.renderHallOfFame();
+    if (parts[0] === "degustateurs") return this.renderDegustateursList();
+    if (parts[0] === "degustateur" && parts[1]) return this.renderProfil(parts[1]);
+    if (parts[0] === "battle") return this.renderBattle();
+    if (parts[0] === "stats") return this.renderStats();
+    if (parts[0] === "settings") return this.renderSettings();
+    return this.renderDashboard();
+  },
+
+  setNav(active) {
+    document.querySelectorAll(".navbtn").forEach((b) => b.classList.toggle("active", b.dataset.nav === active));
+  },
+  closeMenu() {
+    const m = document.getElementById("sideMenu");
+    if (m) m.classList.remove("open");
+    const ov = document.getElementById("menuOverlay");
+    if (ov) ov.classList.remove("open");
+  },
+  toggleMenu() {
+    document.getElementById("sideMenu").classList.toggle("open");
+    document.getElementById("menuOverlay").classList.toggle("open");
+  },
+
+  /* ============================================================
+     DASHBOARD
+     ============================================================ */
+  renderDashboard() {
+    this.setNav("home");
+    const stats = Calc.statsGlobales();
+    const hof = Calc.hallOfFame();
+    const podium = Calc.classement("note").slice(0, 3);
+    const noData = stats.nbChips === 0;
+
+    $app().innerHTML = `
+      <div class="topbar">
+        <button class="iconbtn" onclick="App.toggleMenu()">☰</button>
+        <div class="brand"><span class="brand-title">CHIP CLUB</span><span class="brand-sub">Le classement très sérieux de chips pas très sérieuses.</span></div>
+      </div>
+
+      <div class="page">
+        ${noData ? `
+        <div class="card empty-card">
+          <div class="empty-emoji">🥔</div>
+          <h3>Bienvenue au club</h3>
+          <p>Aucune chips dégustée pour l'instant. Lancez votre première soirée, ou chargez des données de démo pour explorer l'application.</p>
+          <button class="btn btn-primary" onclick="location.hash='#/soiree/new'">+ Nouvelle dégustation</button>
+          <button class="btn btn-ghost" onclick="App.loadDemo()">Charger des données de démo</button>
+        </div>` : `
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-num">${stats.nbChips}</div><div class="stat-label">Chips dégustées</div></div>
+          <div class="stat-tile"><div class="stat-num">${stats.nbSoirees}</div><div class="stat-label">Soirées</div></div>
+          <div class="stat-tile"><div class="stat-num">${Store.getDegustateurs().length}</div><div class="stat-label">Dégustateurs</div></div>
+          <div class="stat-tile"><div class="stat-num">${stats.nbMarques}</div><div class="stat-label">Marques testées</div></div>
+        </div>
+        <div class="avg-banner">
+          <div class="avg-label">Note moyenne globale</div>
+          <div class="avg-value">${fmt(stats.noteMoyenne)}<span>/10</span></div>
+        </div>
+
+        <div class="cta-row">
+          <button class="btn btn-primary btn-lg" onclick="location.hash='#/soiree/new'">+ Nouvelle dégustation</button>
+          <button class="btn btn-secondary btn-lg" onclick="location.hash='#/classement'">🏆 Voir le classement</button>
+        </div>
+
+        ${podium.length ? `<h3 class="section-title">Podium actuel</h3>${this.podiumHTML(podium)}` : ""}
+
+        ${hof ? `
+        <h3 class="section-title">En bref</h3>
+        <div class="hof-grid">
+          ${this.hofTile("🥇", "Meilleure de tous les temps", hof.meilleure)}
+          ${this.hofTile("💀", "Pire chips", hof.pire)}
+          ${this.hofTile("🔥", "Plus addictive", hof.addictive)}
+          ${this.hofTile("🤯", "Plus originale", hof.originale)}
+          ${this.hofTile("⚔️", "Divise le plus", hof.controversee)}
+        </div>` : ""}
+        `}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  hofTile(emoji, label, row) {
+    if (!row) return "";
+    return `<div class="hof-tile" onclick="location.hash='#/chip/${row.chip.id}'">
+      <div class="hof-emoji">${emoji}</div>
+      <div class="hof-label">${label}</div>
+      <div class="hof-name">${escapeHTML(row.chip.marque)} — ${escapeHTML(row.chip.saveurLabel)}</div>
+      <div class="hof-note">${fmt(row.note)}/10</div>
+    </div>`;
+  },
+
+  podiumHTML(rows) {
+    const p = [rows[1], rows[0], rows[2]]; // ordre visuel 2-1-3
+    const heights = ["podium-2", "podium-1", "podium-3"];
+    const medals = ["🥈", "🥇", "🥉"];
+    return `<div class="podium">
+      ${p.map((r, i) => r ? `
+        <div class="podium-col ${heights[i]}" onclick="location.hash='#/chip/${r.chip.id}'">
+          <div class="podium-medal">${medals[i]}</div>
+          <div class="podium-card">
+            <div class="podium-brand">${escapeHTML(r.chip.marque)}</div>
+            <div class="podium-flavor">${escapeHTML(r.chip.saveurLabel)}</div>
+            <div class="podium-note">${fmt(r.note)}</div>
+          </div>
+          <div class="podium-block"></div>
+        </div>` : `<div class="podium-col ${heights[i]}"></div>`).join("")}
+    </div>`;
+  },
+
+  loadDemo() {
+    Demo.load();
+    this.route();
+  },
+
+  /* ============================================================
+     SOIRÉE — Création
+     ============================================================ */
+  renderSoireeNew() {
+    this.setNav("");
+    const tasters = Store.getDegustateurs();
+    $app().innerHTML = `
+      ${this.header("Nouvelle soirée", true)}
+      <div class="page">
+        <div class="card">
+          <label class="field-label">Nom de la soirée</label>
+          <input class="input" id="f-nom" placeholder="Chip Night #${Store.getSoirees().length + 1}" value="Chip Night #${Store.getSoirees().length + 1}">
+
+          <label class="field-label">Date</label>
+          <input class="input" id="f-date" type="date" value="${new Date().toISOString().slice(0, 10)}">
+
+          <label class="field-label">Participants</label>
+          <div class="chip-select" id="f-participants">
+            ${tasters.map((t) => `<button type="button" class="chip-opt" data-id="${t.id}" onclick="App.toggleChipOpt(this)">${t.avatarEmoji} ${escapeHTML(t.nom)}</button>`).join("")}
+          </div>
+          <div class="inline-add">
+            <input class="input" id="f-newtaster" placeholder="Ajouter un dégustateur…">
+            <button class="btn btn-small" onclick="App.addTasterInline()">Ajouter</button>
+          </div>
+
+          <label class="field-label">Mode de dégustation</label>
+          <div class="mode-select" id="f-mode">
+            ${MODES_DEGUSTATION.map((m, i) => `
+              <button type="button" class="mode-opt ${i === 0 ? "active" : ""}" data-id="${m.id}" onclick="App.selectMode(this)">
+                <div class="mode-title">${m.label}</div>
+                <div class="mode-desc">${m.description}</div>
+              </button>`).join("")}
+          </div>
+
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.startSoiree()">Commencer la dégustation</button>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  toggleChipOpt(btn) { btn.classList.toggle("active"); },
+  selectMode(btn) {
+    btn.parentElement.querySelectorAll(".mode-opt").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+  },
+  addTasterInline() {
+    const input = document.getElementById("f-newtaster");
+    const nom = input.value.trim();
+    if (!nom) return;
+    const t = Store.addDegustateur(nom);
+    input.value = "";
+    const container = document.getElementById("f-participants");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip-opt active";
+    btn.dataset.id = t.id;
+    btn.textContent = `${t.avatarEmoji} ${t.nom}`;
+    btn.onclick = () => this.toggleChipOpt(btn);
+    container.appendChild(btn);
+  },
+
+  startSoiree() {
+    const nom = document.getElementById("f-nom").value.trim() || "Chip Night";
+    const date = document.getElementById("f-date").value;
+    const participantsIds = [...document.querySelectorAll("#f-participants .chip-opt.active")].map((b) => b.dataset.id);
+    const mode = document.querySelector("#f-mode .mode-opt.active").dataset.id;
+    if (!participantsIds.length) { alert("Sélectionne au moins un participant."); return; }
+    const soiree = Store.addSoiree({ nom, date, participantsIds, mode });
+    location.hash = `#/soiree/${soiree.id}/deguster`;
+  },
+
+  /* ============================================================
+     DÉGUSTATION — flow d'ajout de chips + notation
+     ============================================================ */
+  renderDegustation(soireeId) {
+    const soiree = Store.getSoiree(soireeId);
+    if (!soiree) return this.renderDashboard();
+    this.setNav("taste");
+
+    if (this.wizard && this.wizard.soireeId === soireeId && this.wizard.step) {
+      return this.renderWizardStep();
+    }
+
+    const degs = Store.getDegustationsBySoiree(soireeId);
+    $app().innerHTML = `
+      ${this.header(soiree.nom, true, `#/soiree/${soireeId}`)}
+      <div class="page">
+        <div class="card session-card">
+          <div class="session-meta">
+            <span>${soiree.date}</span>
+            <span>${soiree.participantsIds.length} dégustateurs</span>
+            <span class="badge ${soiree.mode === "aveugle" ? "badge-blind" : ""}">${soiree.mode === "aveugle" ? "À l'aveugle" : "Classique"}</span>
+          </div>
+          <div class="session-count">${degs.length} paquet${degs.length > 1 ? "s" : ""} dégusté${degs.length > 1 ? "s" : ""}</div>
+        </div>
+
+        ${degs.length ? `<div class="tasting-list">
+          ${degs.map((d) => {
+            const chip = Store.getChip(d.chipId);
+            const note = Calc.noteChipClub(d.id);
+            return `<div class="tasting-row">
+              <div class="tr-name">${chip.marque} — ${d.revele || soiree.mode !== "aveugle" ? chip.saveurLabel : "🙈 caché"}</div>
+              <div class="tr-note">${note != null ? fmt(note) : "…"}</div>
+            </div>`;
+          }).join("")}
+        </div>` : `<p class="muted">Aucun paquet ajouté pour l'instant.</p>`}
+
+        <button class="btn btn-primary btn-lg btn-block" onclick="App.newChipFlow('${soireeId}')">+ Ajouter un paquet à déguster</button>
+        ${degs.length ? `<button class="btn btn-secondary btn-lg btn-block" onclick="location.hash='#/soiree/${soireeId}'">Terminer la soirée — voir le récap</button>` : ""}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  newChipFlow(soireeId) {
+    this.wizard = { soireeId, step: "chipform" };
+    this.renderWizardStep();
+  },
+
+  renderWizardStep() {
+    const w = this.wizard;
+    if (w.step === "chipform") return this.renderChipForm();
+    if (w.step === "rating") return this.renderRatingStep();
+    if (w.step === "reveal") return this.renderRevealStep();
+  },
+
+  cancelWizard() {
+    const soireeId = this.wizard ? this.wizard.soireeId : null;
+    this.wizard = null;
+    location.hash = soireeId ? `#/soiree/${soireeId}/deguster` : "#/";
+    this.route();
+  },
+
+  renderChipForm() {
+    const allSaveurs = Store.getAllSaveurs();
+    const allFamilles = Store.getAllFamilles();
+    const saveursByFamille = {};
+    allSaveurs.forEach((s) => {
+      const fam = labelOf(FAMILLES_SAVEUR, s.familleId, "Autre");
+      saveursByFamille[fam] = saveursByFamille[fam] || [];
+      saveursByFamille[fam].push(s);
+    });
+
+    $app().innerHTML = `
+      ${this.header("Nouveau paquet", true, null, () => this.cancelWizard())}
+      <div class="page">
+        <div class="card">
+          <h3 class="form-section-title">📸 Identité</h3>
+          <label class="field-label">Photo du paquet</label>
+          <div class="photo-upload" id="photo-zone" onclick="document.getElementById('f-photo').click()">
+            <span id="photo-placeholder">+ Ajouter une photo</span>
+            <img id="photo-preview" style="display:none">
+          </div>
+          <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="App.previewPhoto(event)">
+
+          <label class="field-label">Marque *</label>
+          <input class="input" id="f-marque" placeholder="Ex : Lay's" list="marques-list">
+          <datalist id="marques-list">${Store.getMarques().map((m) => `<option value="${escapeHTML(m.nom)}">`).join("")}</datalist>
+
+          <label class="field-label">Nom commercial</label>
+          <input class="input" id="f-nomcommercial" placeholder="Ex : Strong">
+
+          <label class="field-label">Saveur *</label>
+          <select class="input" id="f-saveur">
+            <option value="">— Choisir —</option>
+            ${Object.entries(saveursByFamille).map(([fam, list]) => `
+              <optgroup label="${fam}">
+                ${list.map((s) => `<option value="${s.id}">${escapeHTML(s.label)}</option>`).join("")}
+              </optgroup>`).join("")}
+            <option value="__new__">+ Ajouter une saveur personnalisée</option>
+          </select>
+
+          <label class="field-label">Gamme (optionnel)</label>
+          <input class="input" id="f-gamme" placeholder="Ex : Édition limitée">
+
+          <label class="field-label">Pays d'origine</label>
+          <input class="input" id="f-pays" placeholder="Ex : France">
+
+          <label class="field-label">Magasin d'achat</label>
+          <input class="input" id="f-magasin" placeholder="Ex : Carrefour">
+
+          <div class="field-row">
+            <div>
+              <label class="field-label">Prix (€)</label>
+              <input class="input" id="f-prix" type="number" step="0.01" min="0" placeholder="2.49">
+            </div>
+            <div>
+              <label class="field-label">Poids (g)</label>
+              <input class="input" id="f-poids" type="number" step="1" min="0" placeholder="150">
+            </div>
+          </div>
+          <div class="price100g" id="price100g">Prix / 100g : —</div>
+
+          <h3 class="form-section-title">🗂️ Classification</h3>
+          <label class="field-label">Famille</label>
+          <select class="input" id="f-famille">
+            <option value="">— Choisir —</option>
+            ${allFamilles.map((f) => `<option value="${f.id}">${f.emoji} ${escapeHTML(f.label)}</option>`).join("")}
+            <option value="__new__">+ Créer une catégorie personnalisée</option>
+          </select>
+
+          <label class="field-label">Forme / découpe</label>
+          <select class="input" id="f-forme">
+            <option value="">— Optionnel —</option>
+            ${FORMES.map((f) => `<option value="${f.id}">${escapeHTML(f.label)}</option>`).join("")}
+          </select>
+
+          <label class="field-label">Type de cuisson</label>
+          <select class="input" id="f-cuisson">
+            <option value="">— Optionnel —</option>
+            ${CUISSONS.map((c) => `<option value="${c.id}">${escapeHTML(c.label)}</option>`).join("")}
+          </select>
+
+          <label class="field-label">Niveau de piquant</label>
+          <input type="range" class="slider" id="f-piquant" min="0" max="5" step="1" value="0" oninput="document.getElementById('piquant-label').textContent = App.piquantLabel(this.value)">
+          <div class="slider-value" id="piquant-label">${NIVEAUX_PIQUANT[0].label}</div>
+
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.confirmChipForm()">Commencer la dégustation</button>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+    document.getElementById("f-prix").addEventListener("input", this.updatePrice100g);
+    document.getElementById("f-poids").addEventListener("input", this.updatePrice100g);
+    document.getElementById("f-saveur").addEventListener("change", (e) => {
+      if (e.target.value === "__new__") {
+        const label = prompt("Nom de la nouvelle saveur :");
+        if (!label) { e.target.value = ""; return; }
+        const famLabel = prompt("Famille de saveur (ex: Épicé, Fromage, Premium, WTF...) :", "WTF");
+        let fam = FAMILLES_SAVEUR.find((f) => f.label.toLowerCase().includes((famLabel || "").toLowerCase()));
+        const sv = Store.addSaveurPerso(label, fam ? fam.id : "wtf");
+        const opt = document.createElement("option");
+        opt.value = sv.id; opt.textContent = sv.label; opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastElementChild);
+      }
+    });
+    document.getElementById("f-famille").addEventListener("change", (e) => {
+      if (e.target.value === "__new__") {
+        const label = prompt("Nom de la nouvelle catégorie :");
+        if (!label) { e.target.value = ""; return; }
+        const f = Store.addFamillePerso(label);
+        const opt = document.createElement("option");
+        opt.value = f.id; opt.textContent = "❓ " + f.label; opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastElementChild);
+      }
+    });
+  },
+
+  piquantLabel(v) { return NIVEAUX_PIQUANT[+v].label + " " + NIVEAUX_PIQUANT[+v].emoji; },
+
+  updatePrice100g() {
+    const prix = parseFloat(document.getElementById("f-prix").value);
+    const poids = parseFloat(document.getElementById("f-poids").value);
+    const el = document.getElementById("price100g");
+    if (prix && poids) {
+      el.textContent = "Prix / 100g : " + fmtEUR((prix / poids) * 100);
+    } else {
+      el.textContent = "Prix / 100g : —";
+    }
+  },
+
+  previewPhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = document.getElementById("photo-preview");
+      img.src = ev.target.result;
+      img.style.display = "block";
+      document.getElementById("photo-placeholder").style.display = "none";
+      this._pendingPhoto = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+
+  confirmChipForm() {
+    const marque = document.getElementById("f-marque").value.trim();
+    const saveurId = document.getElementById("f-saveur").value;
+    if (!marque) return alert("La marque est obligatoire.");
+    if (!saveurId || saveurId === "__new__") return alert("Choisis une saveur.");
+
+    Store.addMarque(marque);
+    const saveur = Store.getAllSaveurs().find((s) => s.id === saveurId);
+
+    const chip = Store.addChip({
+      photo: this._pendingPhoto || null,
+      marque,
+      nomCommercial: document.getElementById("f-nomcommercial").value.trim(),
+      saveurId,
+      saveurLabel: saveur.label,
+      saveurFamilleId: saveur.familleId,
+      gamme: document.getElementById("f-gamme").value.trim(),
+      paysOrigine: document.getElementById("f-pays").value.trim(),
+      magasin: document.getElementById("f-magasin").value.trim(),
+      prix: parseFloat(document.getElementById("f-prix").value) || null,
+      poids: parseFloat(document.getElementById("f-poids").value) || null,
+      familleId: document.getElementById("f-famille").value || null,
+      formeId: document.getElementById("f-forme").value || null,
+      cuissonId: document.getElementById("f-cuisson").value || null,
+      piquant: +document.getElementById("f-piquant").value
+    });
+    this._pendingPhoto = null;
+
+    const soiree = Store.getSoiree(this.wizard.soireeId);
+    const degustation = Store.addDegustation({ soireeId: soiree.id, chipId: chip.id });
+
+    this.wizard = {
+      soireeId: soiree.id, step: "rating",
+      degustationId: degustation.id,
+      chipId: chip.id,
+      participants: soiree.participantsIds.slice(),
+      participantIndex: 0,
+      criteriaIndex: 0,
+      bonusIndex: 0,
+      current: this.emptyNote()
+    };
+    this.renderRatingStep();
+  },
+
+  emptyNote() {
+    return { criteres: {}, racheter: null, survie: null, contextes: [], commentaire: "" };
+  },
+
+  /* ---------- Étapes de notation (progressives) ---------- */
+  renderRatingStep() {
+    const w = this.wizard;
+    const soiree = Store.getSoiree(w.soireeId);
+    const chip = Store.getChip(w.chipId);
+    const tasterId = w.participants[w.participantIndex];
+    const taster = Store.getDegustateur(tasterId);
+    const totalSteps = CRITERES.length + 4; // critères + racheter + survie + contextes + commentaire
+    const step = w.criteriaIndex; // 0..totalSteps-1
+    const progressPct = Math.round((step / totalSteps) * 100);
+
+    const showIdentity = soiree.mode !== "aveugle";
+
+    let bodyHTML = "";
+    if (step < CRITERES.length) {
+      const c = CRITERES[step];
+      const val = w.current.criteres[c.id] ?? 5;
+      bodyHTML = `
+        <div class="rate-question">
+          <div class="rate-label">${escapeHTML(c.label)}</div>
+          ${c.description ? `<div class="rate-desc">${escapeHTML(c.description)}</div>` : ""}
+          <div class="rate-value" id="rate-value">${fmt(val)}</div>
+          <input type="range" class="slider big" min="0" max="10" step="0.5" value="${val}" id="rate-slider"
+            oninput="document.getElementById('rate-value').textContent = (+this.value).toFixed(1).replace('.', ',')">
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" onclick="App.submitCriterion('${c.id}')">Suivant →</button>
+      `;
+    } else if (step === CRITERES.length) {
+      bodyHTML = `
+        <div class="rate-question">
+          <div class="rate-label">Tu rachètes ?</div>
+          <div class="option-grid">
+            ${RACHETER_OPTIONS.map((o) => `<button class="option-btn" onclick="App.submitRacheter('${o.id}')"><span class="opt-emoji">${o.emoji}</span>${o.label}</button>`).join("")}
+          </div>
+        </div>
+      `;
+    } else if (step === CRITERES.length + 1) {
+      bodyHTML = `
+        <div class="rate-question">
+          <div class="rate-label">Le paquet survit combien de temps ?</div>
+          <div class="option-grid vertical">
+            ${SURVIE_PAQUET.map((o) => `<button class="option-btn" onclick="App.submitSurvie(${o.valeur})">${o.valeur} — ${o.label}</button>`).join("")}
+          </div>
+        </div>
+      `;
+    } else if (step === CRITERES.length + 2) {
+      bodyHTML = `
+        <div class="rate-question">
+          <div class="rate-label">Avec quoi tu la manges ?</div>
+          <div class="chip-select" id="ctx-select">
+            ${CONTEXTES.map((c) => `<button type="button" class="chip-opt" data-id="${c.id}" onclick="App.toggleChipOpt(this)">${escapeHTML(c.label)}</button>`).join("")}
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.submitContextes()">Suivant →</button>
+        </div>
+      `;
+    } else {
+      bodyHTML = `
+        <div class="rate-question">
+          <div class="rate-label">Commentaire / punchline</div>
+          <textarea class="input textarea" id="f-commentaire" placeholder="Le poulet n'a visiblement pas été consulté pour cette recette…"></textarea>
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.submitCommentaire()">Valider ma dégustation</button>
+        </div>
+      `;
+    }
+
+    $app().innerHTML = `
+      ${this.header(`${taster.avatarEmoji} ${escapeHTML(taster.nom)} note`, true, null, () => this.cancelWizard())}
+      <div class="page">
+        <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+        ${showIdentity ? `<div class="chip-mini-card">
+          <div class="cmc-brand">${escapeHTML(chip.marque)} ${chip.nomCommercial ? "— " + escapeHTML(chip.nomCommercial) : ""}</div>
+          <div class="cmc-flavor">${escapeHTML(chip.saveurLabel)}</div>
+        </div>` : `<div class="chip-mini-card blind">🙈 Dégustation à l'aveugle</div>`}
+        <div class="card rate-card">
+          ${bodyHTML}
+        </div>
+      </div>
+    `;
+  },
+
+  submitCriterion(critereId) {
+    const val = +document.getElementById("rate-slider").value;
+    this.wizard.current.criteres[critereId] = val;
+    this.wizard.criteriaIndex++;
+    this.renderRatingStep();
+  },
+  submitRacheter(id) {
+    this.wizard.current.racheter = id;
+    this.wizard.criteriaIndex++;
+    this.renderRatingStep();
+  },
+  submitSurvie(v) {
+    this.wizard.current.survie = v;
+    this.wizard.criteriaIndex++;
+    this.renderRatingStep();
+  },
+  submitContextes() {
+    const ids = [...document.querySelectorAll("#ctx-select .chip-opt.active")].map((b) => b.dataset.id);
+    this.wizard.current.contextes = ids;
+    this.wizard.criteriaIndex++;
+    this.renderRatingStep();
+  },
+  submitCommentaire() {
+    const w = this.wizard;
+    w.current.commentaire = document.getElementById("f-commentaire").value.trim();
+
+    Store.addNote({
+      degustationId: w.degustationId,
+      degustateurId: w.participants[w.participantIndex],
+      criteres: w.current.criteres,
+      racheter: w.current.racheter,
+      survie: w.current.survie,
+      contextes: w.current.contextes,
+      commentaire: w.current.commentaire
+    });
+
+    if (w.participantIndex < w.participants.length - 1) {
+      w.participantIndex++;
+      w.criteriaIndex = 0;
+      w.current = this.emptyNote();
+      this.renderRatingStep();
+    } else {
+      w.step = "reveal";
+      this.renderRevealStep();
+    }
+  },
+
+  renderRevealStep() {
+    const w = this.wizard;
+    const soiree = Store.getSoiree(w.soireeId);
+    const chip = Store.getChip(w.chipId);
+    const note = Calc.noteChipClub(w.degustationId);
+    const verdict = getVerdict(note);
+    const isBlind = soiree.mode === "aveugle";
+    const deg = Store.getDegustation(w.degustationId);
+
+    const perParticipant = w.participants.map((id) => {
+      const t = Store.getDegustateur(id);
+      const m = Calc.degustateurMoyenne(w.degustationId, id);
+      return { t, m };
+    });
+
+    $app().innerHTML = `
+      ${this.header("Résultat", false)}
+      <div class="page">
+        <div class="card reveal-card">
+          <div class="reveal-participants">
+            ${perParticipant.map((p) => `<div class="rp-row"><span>${p.t.avatarEmoji} ${escapeHTML(p.t.nom)}</span><span>${fmt(p.m)}</span></div>`).join("")}
+          </div>
+
+          <div class="reveal-label">NOTE CHIP CLUB</div>
+          <div class="reveal-note anim-pop">${fmt(note)}<span>/10</span></div>
+          <div class="reveal-verdict">${verdict.emoji} ${verdict.label}</div>
+
+          ${isBlind && !deg.revele ? `
+            <div class="blind-box" id="blind-box">
+              <div class="blind-hidden">🙈 Marque et saveur cachées</div>
+              <button class="btn btn-primary btn-lg btn-block" onclick="App.revealChip()">👀 RÉVÉLER LA CHIPS</button>
+            </div>
+          ` : `
+            <div class="reveal-identity anim-fadein">
+              <div class="ri-brand">${escapeHTML(chip.marque)} ${chip.nomCommercial ? "— " + escapeHTML(chip.nomCommercial) : ""}</div>
+              <div class="ri-flavor">${escapeHTML(chip.saveurLabel)}</div>
+            </div>
+          `}
+
+          <button class="btn btn-secondary btn-lg btn-block" onclick="App.continueSoiree()">+ Ajouter un autre paquet</button>
+          <button class="btn btn-ghost btn-block" onclick="App.finishSoireeFromWizard()">Terminer la soirée — voir le récap</button>
+        </div>
+      </div>
+    `;
+  },
+
+  revealChip() {
+    Store.revelerDegustation(this.wizard.degustationId);
+    const box = document.getElementById("blind-box");
+    box.classList.add("anim-fadeout");
+    setTimeout(() => this.renderRevealStep(), 250);
+  },
+
+  continueSoiree() {
+    const soireeId = this.wizard.soireeId;
+    this.wizard = { soireeId, step: "chipform" };
+    this.renderWizardStep();
+  },
+  finishSoireeFromWizard() {
+    const soireeId = this.wizard.soireeId;
+    this.wizard = null;
+    location.hash = `#/soiree/${soireeId}`;
+  },
+
+  /* ============================================================
+     LISTE SOIRÉES + RÉCAP
+     ============================================================ */
+  renderSoireesList() {
+    this.setNav("");
+    const soirees = Store.getSoirees();
+    $app().innerHTML = `
+      ${this.header("Soirées", true)}
+      <div class="page">
+        ${soirees.length ? soirees.map((s) => {
+          const degs = Store.getDegustationsBySoiree(s.id);
+          return `<div class="card list-card" onclick="location.hash='#/soiree/${s.id}'">
+            <div class="lc-title">${escapeHTML(s.nom)}</div>
+            <div class="lc-sub">${s.date} · ${degs.length} paquets · ${s.participantsIds.length} dégustateurs</div>
+          </div>`;
+        }).join("") : `<p class="muted">Aucune soirée pour l'instant.</p>`}
+        <button class="btn btn-primary btn-lg btn-block" onclick="location.hash='#/soiree/new'">+ Nouvelle soirée</button>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  renderSoireeRecap(soireeId) {
+    this.setNav("");
+    const recap = Calc.recapSoiree(soireeId);
+    if (!recap) return this.renderDashboard();
+    const { soiree, rows } = recap;
+
+    $app().innerHTML = `
+      ${this.header(soiree.nom, true, "#/soirees")}
+      <div class="page">
+        <div class="card recap-header">
+          <div class="recap-date">${soiree.date}</div>
+          <div class="recap-stats">
+            <span>${recap.nbParticipants} dégustateurs</span>
+            <span>${recap.nbPaquets} paquets</span>
+            <span>${recap.poidsTotalKg.toFixed(2)} kg testés</span>
+          </div>
+        </div>
+
+        ${rows.length ? this.podiumHTML(rows.slice().sort((a, b) => b.note - a.note).slice(0, 3)) : ""}
+
+        <div class="hof-grid">
+          ${recap.accident ? this.hofTile("💀", "Accident industriel", recap.accident) : ""}
+          ${recap.addictive ? this.hofTile("🔥", "Plus addictive", recap.addictive) : ""}
+          ${recap.surprenante ? this.hofTile("🤯", "Plus surprenante", recap.surprenante) : ""}
+          ${recap.debat ? this.hofTile("⚔️", "Plus gros débat", recap.debat) : ""}
+          ${recap.qualitePrix ? this.hofTile("💰", "Meilleur qualité/prix", recap.qualitePrix) : ""}
+        </div>
+
+        <h3 class="section-title">Classement complet de la soirée</h3>
+        ${this.rankTableHTML(rows.slice().sort((a, b) => b.note - a.note))}
+
+        <button class="btn btn-primary btn-lg btn-block" onclick="location.hash='#/soiree/${soireeId}/deguster'">Continuer cette soirée</button>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  /* ============================================================
+     LISTE DES CHIPS + DÉTAIL
+     ============================================================ */
+  renderChipsList() {
+    this.setNav("chips");
+    const chips = Store.getChips();
+    const rows = Calc.allRows();
+    const rowByChip = {};
+    rows.forEach((r) => rowByChip[r.chip.id] = r);
+
+    $app().innerHTML = `
+      ${this.header("Toutes les chips", false)}
+      <div class="page">
+        <input class="input" id="chip-search" placeholder="🔍 Rechercher une marque, une saveur…" oninput="App.filterChipsList()">
+        <div id="chips-grid" class="chips-grid">
+          ${chips.map((c) => this.chipCardHTML(c, rowByChip[c.id])).join("")}
+        </div>
+        ${!chips.length ? `<p class="muted">Aucune chips enregistrée. Lance une dégustation pour commencer !</p>` : ""}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  chipCardHTML(chip, row) {
+    const verdict = row ? getVerdict(row.note) : null;
+    return `<div class="chip-card" data-search="${escapeHTML((chip.marque + " " + chip.saveurLabel + " " + (chip.nomCommercial || "")).toLowerCase())}" onclick="location.hash='#/chip/${chip.id}'">
+      <div class="cc-photo">${chip.photo ? `<img src="${chip.photo}">` : `<span>🥔</span>`}</div>
+      <div class="cc-body">
+        <div class="cc-brand">${escapeHTML(chip.marque)}</div>
+        <div class="cc-flavor">${escapeHTML(chip.saveurLabel)}</div>
+        ${row ? `<div class="cc-note">${fmt(row.note)}/10 ${verdict.emoji}</div>` : `<div class="cc-note muted">Pas encore notée</div>`}
+      </div>
+    </div>`;
+  },
+
+  filterChipsList() {
+    const q = document.getElementById("chip-search").value.toLowerCase();
+    document.querySelectorAll("#chips-grid .chip-card").forEach((el) => {
+      el.style.display = el.dataset.search.includes(q) ? "" : "none";
+    });
+  },
+
+  renderChipDetail(chipId) {
+    this.setNav("chips");
+    const chip = Store.getChip(chipId);
+    if (!chip) return this.renderChipsList();
+    const row = Calc.battleRow(chipId);
+    const deg = Store.getDegustations().find((d) => d.chipId === chipId);
+    const notes = deg ? Store.getNotesByDegustation(deg.id) : [];
+
+    $app().innerHTML = `
+      ${this.header(chip.marque, true, "#/chips")}
+      <div class="page">
+        <div class="card chip-detail">
+          <div class="cd-photo">${chip.photo ? `<img src="${chip.photo}">` : `<span>🥔</span>`}</div>
+          <div class="cd-title">${escapeHTML(chip.marque)} ${chip.nomCommercial ? "— " + escapeHTML(chip.nomCommercial) : ""}</div>
+          <div class="cd-flavor">${escapeHTML(chip.saveurLabel)} ${chip.gamme ? "· " + escapeHTML(chip.gamme) : ""}</div>
+
+          ${row && row.note != null ? `
+          <div class="reveal-note anim-pop small">${fmt(row.note)}<span>/10</span></div>
+          <div class="reveal-verdict">${row.verdict.emoji} ${row.verdict.label}</div>
+          <div class="criteria-bars">
+            ${CRITERES.map((c) => `
+              <div class="cbar-row">
+                <span class="cbar-label">${c.label}</span>
+                <div class="cbar-track"><div class="cbar-fill" style="width:${(row[c.id] || 0) * 10}%"></div></div>
+                <span class="cbar-val">${fmt(row[c.id])}</span>
+              </div>`).join("")}
+          </div>` : `<p class="muted">Pas encore de note.</p>`}
+
+          <div class="info-grid">
+            <div><span>Famille</span><b>${labelOf(Store.getAllFamilles(), chip.familleId)}</b></div>
+            <div><span>Forme</span><b>${labelOf(FORMES, chip.formeId, "—")}</b></div>
+            <div><span>Cuisson</span><b>${labelOf(CUISSONS, chip.cuissonId, "—")}</b></div>
+            <div><span>Piquant</span><b>${NIVEAUX_PIQUANT[chip.piquant || 0].emoji || "Aucun"}</b></div>
+            <div><span>Pays</span><b>${escapeHTML(chip.paysOrigine) || "—"}</b></div>
+            <div><span>Magasin</span><b>${escapeHTML(chip.magasin) || "—"}</b></div>
+            <div><span>Prix</span><b>${fmtEUR(chip.prix)}</b></div>
+            <div><span>Prix/100g</span><b>${fmtEUR(Calc.prixPour100g(chip))}</b></div>
+          </div>
+
+          ${notes.filter((n) => n.commentaire).length ? `
+          <h3 class="form-section-title">💬 Commentaires</h3>
+          ${notes.filter((n) => n.commentaire).map((n) => {
+            const t = Store.getDegustateur(n.degustateurId);
+            return `<div class="comment-row"><b>${t ? t.avatarEmoji + " " + escapeHTML(t.nom) : "?"}</b> — « ${escapeHTML(n.commentaire)} »</div>`;
+          }).join("")}` : ""}
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  /* ============================================================
+     CLASSEMENT
+     ============================================================ */
+  renderClassement() {
+    this.setNav("rank");
+    const marques = [...new Set(Store.getChips().map((c) => c.marque))].sort();
+    const familles = Store.getAllFamilles();
+    const famillesSaveur = FAMILLES_SAVEUR;
+
+    $app().innerHTML = `
+      ${this.header("Classement", false)}
+      <div class="page">
+        <div class="filter-row">
+          <select class="input select-sm" id="filter-sort" onchange="App.applyClassementFilters()">
+            <option value="note">TOP global</option>
+            <option value="gout">Goût</option>
+            <option value="texture">Texture</option>
+            <option value="addictivite">Addictivité</option>
+            <option value="originalite">Originalité</option>
+            <option value="qualite_prix">Rapport qualité/prix</option>
+            <option value="intensite">Intensité</option>
+            <option value="piquant">Piquant</option>
+            <option value="prix100g">Prix</option>
+            <option value="date">Date</option>
+          </select>
+          <select class="input select-sm" id="filter-marque" onchange="App.applyClassementFilters()">
+            <option value="">Toutes les marques</option>
+            ${marques.map((m) => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join("")}
+          </select>
+          <select class="input select-sm" id="filter-famille" onchange="App.applyClassementFilters()">
+            <option value="">Toutes les familles</option>
+            ${familles.map((f) => `<option value="${f.id}">${escapeHTML(f.label)}</option>`).join("")}
+          </select>
+          <select class="input select-sm" id="filter-famille-saveur" onchange="App.applyClassementFilters()">
+            <option value="">Toutes saveurs (famille)</option>
+            ${famillesSaveur.map((f) => `<option value="${f.id}">${escapeHTML(f.label)}</option>`).join("")}
+          </select>
+        </div>
+        <div id="podium-zone"></div>
+        <div id="rank-table"></div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+    this.applyClassementFilters();
+  },
+
+  applyClassementFilters() {
+    const sort = document.getElementById("filter-sort").value;
+    const marque = document.getElementById("filter-marque").value;
+    const famille = document.getElementById("filter-famille").value;
+    const familleSaveur = document.getElementById("filter-famille-saveur").value;
+    const rows = Calc.classement(sort, famille || null, marque || null, familleSaveur || null);
+    document.getElementById("podium-zone").innerHTML = rows.length >= 3 && sort === "note" ? this.podiumHTML(rows.slice(0, 3)) : "";
+    document.getElementById("rank-table").innerHTML = rows.length ? this.rankTableHTML(rows) : `<p class="muted">Aucun résultat.</p>`;
+  },
+
+  rankTableHTML(rows) {
+    return `<div class="rank-list">
+      ${rows.map((r, i) => `
+        <div class="rank-row" onclick="location.hash='#/chip/${r.chip.id}'">
+          <div class="rank-pos">${i + 1}</div>
+          <div class="rank-photo">${r.chip.photo ? `<img src="${r.chip.photo}">` : "🥔"}</div>
+          <div class="rank-info">
+            <div class="rank-brand">${escapeHTML(r.chip.marque)}</div>
+            <div class="rank-flavor">${escapeHTML(r.chip.saveurLabel)}</div>
+          </div>
+          <div class="rank-note">${fmt(r.note)}</div>
+        </div>
+      `).join("")}
+    </div>`;
+  },
+
+  /* ============================================================
+     HALL OF FAME
+     ============================================================ */
+  renderHallOfFame() {
+    this.setNav("");
+    const hof = Calc.hallOfFame();
+    $app().innerHTML = `
+      ${this.header("🏛️ Chip Club Hall of Fame", false)}
+      <div class="page">
+        ${hof ? `
+        <div class="hof-grid">
+          ${this.hofTile("👑", "Meilleure de tous les temps", hof.meilleure)}
+          ${this.hofTile("💀", "Pire chips de tous les temps", hof.pire)}
+          ${this.hofTile("🔥", "Plus addictive", hof.addictive)}
+          ${this.hofTile("🤯", "Plus originale", hof.originale)}
+          ${this.hofTile("💰", "Meilleur rapport qualité/prix", hof.qualitePrix)}
+          ${this.hofTile("😋", "Meilleur goût", hof.meilleurGout)}
+          ${this.hofTile("🧱", "Meilleure texture", hof.meilleureTexture)}
+          ${this.hofTile("🎯", "Saveur la plus fidèle", hof.plusFidele)}
+          ${this.hofTile("🌶️", "Plus piquante", hof.plusPiquante)}
+          ${this.hofTile("⚔️", "Plus controversée", hof.controversee)}
+        </div>` : `<p class="muted">Pas encore assez de données pour établir le Hall of Fame.</p>`}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  /* ============================================================
+     DÉGUSTATEURS
+     ============================================================ */
+  renderDegustateursList() {
+    this.setNav("");
+    const tasters = Store.getDegustateurs();
+    const titres = Calc.titres();
+    const titreParTaster = {};
+    titres.forEach((t) => {
+      titreParTaster[t.degustateur.id] = titreParTaster[t.degustateur.id] || [];
+      titreParTaster[t.degustateur.id].push(t);
+    });
+
+    $app().innerHTML = `
+      ${this.header("Dégustateurs", false)}
+      <div class="page">
+        ${titres.length ? `
+        <h3 class="section-title">Titres du club</h3>
+        <div class="titres-list">
+          ${titres.map((t) => `<div class="titre-row"><span class="titre-emoji">${t.emoji}</span><div><div class="titre-label">${t.label}</div><div class="titre-name">${t.degustateur.avatarEmoji} ${escapeHTML(t.degustateur.nom)} · ${t.detail}</div></div></div>`).join("")}
+        </div>` : ""}
+        <h3 class="section-title">Profils</h3>
+        <div class="tasters-grid">
+          ${tasters.map((t) => `<div class="taster-card" onclick="location.hash='#/degustateur/${t.id}'">
+            <div class="taster-avatar">${t.avatarEmoji}</div>
+            <div class="taster-name">${escapeHTML(t.nom)}</div>
+          </div>`).join("")}
+        </div>
+        ${!tasters.length ? `<p class="muted">Aucun dégustateur pour l'instant.</p>` : ""}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  renderProfil(id) {
+    this.setNav("");
+    const p = Calc.profil(id);
+    const taster = Store.getDegustateur(id);
+    if (!taster) return this.renderDegustateursList();
+
+    $app().innerHTML = `
+      ${this.header(taster.nom, true, "#/degustateurs")}
+      <div class="page">
+        <div class="card profil-header">
+          <div class="profil-avatar">${taster.avatarEmoji}</div>
+          <div class="profil-name">${escapeHTML(taster.nom)}</div>
+          ${p ? `
+          <div class="profil-stats">
+            <div><b>${p.nbChips}</b><span>chips dégustées</span></div>
+            <div><b>${fmt(p.moyenneDonnee)}</b><span>note moyenne donnée</span></div>
+            <div><b>${Math.round(p.tauxRachat)}%</b><span>taux "je rachète"</span></div>
+          </div>
+          <div class="profil-prefs">
+            <div>Saveur préférée : <b>${p.saveurPref ? escapeHTML(p.saveurPref.label) : "—"}</b></div>
+            <div>Famille préférée : <b>${p.famillePref ? escapeHTML(p.famillePref.label) : "—"}</b></div>
+            <div>Saveur la moins appréciée : <b>${p.saveurMoins ? escapeHTML(p.saveurMoins.label) : "—"}</b></div>
+          </div>
+          ` : `<p class="muted">Aucune dégustation enregistrée pour l'instant.</p>`}
+        </div>
+
+        ${p ? `
+        <h3 class="section-title">🏆 Mon top 5</h3>
+        <div class="rank-list">
+          ${p.top5.map((r, i) => `<div class="rank-row" onclick="location.hash='#/chip/${r.chip.id}'">
+            <div class="rank-pos">${i + 1}</div>
+            <div class="rank-photo">${r.chip.photo ? `<img src="${r.chip.photo}">` : "🥔"}</div>
+            <div class="rank-info"><div class="rank-brand">${escapeHTML(r.chip.marque)}</div><div class="rank-flavor">${escapeHTML(r.chip.saveurLabel)}</div></div>
+            <div class="rank-note">${fmt(r.moyenne)}</div>
+          </div>`).join("")}
+        </div>
+
+        <h3 class="section-title">💀 Mon flop 5</h3>
+        <div class="rank-list">
+          ${p.flop5.map((r, i) => `<div class="rank-row" onclick="location.hash='#/chip/${r.chip.id}'">
+            <div class="rank-pos">${i + 1}</div>
+            <div class="rank-photo">${r.chip.photo ? `<img src="${r.chip.photo}">` : "🥔"}</div>
+            <div class="rank-info"><div class="rank-brand">${escapeHTML(r.chip.marque)}</div><div class="rank-flavor">${escapeHTML(r.chip.saveurLabel)}</div></div>
+            <div class="rank-note">${fmt(r.moyenne)}</div>
+          </div>`).join("")}
+        </div>
+
+        <h3 class="section-title">Mes saveurs préférées</h3>
+        <div class="pref-tags">${p.saveursPref.map((s) => `<span class="pref-tag">${escapeHTML(s.label)} · ${fmt(s.avg)}</span>`).join("")}</div>
+
+        <h3 class="section-title">Mes marques préférées</h3>
+        <div class="pref-tags">${p.marquesPref.map((s) => `<span class="pref-tag">${escapeHTML(s.label)} · ${fmt(s.avg)}</span>`).join("")}</div>
+        ` : ""}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  /* ============================================================
+     CHIP BATTLE
+     ============================================================ */
+  renderBattle() {
+    this.setNav("");
+    const chips = Store.getChips();
+    $app().innerHTML = `
+      ${this.header("⚔️ Chip Battle", false)}
+      <div class="page">
+        <div class="battle-selectors">
+          <select class="input" id="battle-a"><option value="">— Chips A —</option>${chips.map((c) => `<option value="${c.id}">${escapeHTML(c.marque)} — ${escapeHTML(c.saveurLabel)}</option>`).join("")}</select>
+          <div class="vs">VS</div>
+          <select class="input" id="battle-b"><option value="">— Chips B —</option>${chips.map((c) => `<option value="${c.id}">${escapeHTML(c.marque)} — ${escapeHTML(c.saveurLabel)}</option>`).join("")}</select>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" onclick="App.runBattle()">Comparer</button>
+        <div id="battle-result"></div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  runBattle() {
+    const idA = document.getElementById("battle-a").value;
+    const idB = document.getElementById("battle-b").value;
+    if (!idA || !idB || idA === idB) { alert("Choisis deux chips différentes."); return; }
+    const a = Calc.battleRow(idA);
+    const b = Calc.battleRow(idB);
+    const criteresPlus = CRITERES.concat([]);
+
+    const rowsHTML = (key, label, fmtFn) => {
+      const av = a ? a[key] : null, bv = b ? b[key] : null;
+      const aWin = av != null && bv != null && av > bv;
+      const bWin = av != null && bv != null && bv > av;
+      return `<div class="battle-row">
+        <div class="bv ${aWin ? "win" : ""}">${fmtFn ? fmtFn(av) : fmt(av)}</div>
+        <div class="bl">${label}</div>
+        <div class="bv ${bWin ? "win" : ""}">${fmtFn ? fmtFn(bv) : fmt(bv)}</div>
+      </div>`;
+    };
+
+    document.getElementById("battle-result").innerHTML = `
+      <div class="card battle-card">
+        <div class="battle-header">
+          <div class="bh-name">${escapeHTML(a.chip.marque)}<br><span>${escapeHTML(a.chip.saveurLabel)}</span></div>
+          <div class="bh-vs">VS</div>
+          <div class="bh-name">${escapeHTML(b.chip.marque)}<br><span>${escapeHTML(b.chip.saveurLabel)}</span></div>
+        </div>
+        ${rowsHTML("note", "Note Chip Club")}
+        ${criteresPlus.map((c) => rowsHTML(c.id, c.label)).join("")}
+        ${rowsHTML("prix100g", "Prix / 100g", fmtEUR)}
+        <div class="battle-row">
+          <div class="bv">${fmtEUR(a.chip.prix)}</div>
+          <div class="bl">Prix du paquet</div>
+          <div class="bv">${fmtEUR(b.chip.prix)}</div>
+        </div>
+      </div>
+    `;
+  },
+
+  /* ============================================================
+     STATISTIQUES
+     ============================================================ */
+  renderStats() {
+    this.setNav("stats");
+    const stats = Calc.statsGlobales();
+    const phrases = Calc.phrasesFun();
+
+    $app().innerHTML = `
+      ${this.header("Statistiques", false)}
+      <div class="page">
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-num">${stats.nbChips}</div><div class="stat-label">Paquets testés</div></div>
+          <div class="stat-tile"><div class="stat-num">${stats.nbMarques}</div><div class="stat-label">Marques</div></div>
+          <div class="stat-tile"><div class="stat-num">${stats.nbSaveurs}</div><div class="stat-label">Saveurs</div></div>
+          <div class="stat-tile"><div class="stat-num">${stats.nbSoirees}</div><div class="stat-label">Soirées</div></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-num">${fmtEUR(stats.budgetTotal)}</div><div class="stat-label">Budget total</div></div>
+          <div class="stat-tile"><div class="stat-num">${(stats.poidsTotal / 1000).toFixed(1)} kg</div><div class="stat-label">Poids dégusté</div></div>
+          <div class="stat-tile"><div class="stat-num">${fmtEUR(stats.prixMoyen)}</div><div class="stat-label">Prix moyen/paquet</div></div>
+          <div class="stat-tile"><div class="stat-num">${fmt(stats.noteMoyenne)}</div><div class="stat-label">Note moyenne</div></div>
+        </div>
+
+        ${stats.nbChips ? `
+        <div class="card facts-grid">
+          <div><span>Saveur préférée du groupe</span><b>${stats.saveurPreferee ? escapeHTML(stats.saveurPreferee.label) : "—"}</b></div>
+          <div><span>Famille de saveur préférée</span><b>${stats.familleSaveurPreferee ? escapeHTML(stats.familleSaveurPreferee.label) : "—"}</b></div>
+          <div><span>Type de chips préféré</span><b>${stats.famillePreferee ? escapeHTML(stats.famillePreferee.label) : "—"}</b></div>
+          <div><span>Marque préférée</span><b>${stats.marquePreferee ? escapeHTML(stats.marquePreferee.label) : "—"}</b></div>
+          <div><span>Saveur la moins appréciée</span><b>${stats.saveurMoinsAimee ? escapeHTML(stats.saveurMoinsAimee.label) : "—"}</b></div>
+          <div><span>Meilleur magasin</span><b>${stats.meilleurMagasin ? escapeHTML(stats.meilleurMagasin.label) : "—"}</b></div>
+        </div>
+
+        <h3 class="section-title">Notes par marque</h3>
+        ${this.barChartHTML(stats.parMarque)}
+
+        <h3 class="section-title">Notes par famille de saveur</h3>
+        ${this.barChartHTML(stats.parFamilleSaveur)}
+
+        <h3 class="section-title">Notes par famille de chips</h3>
+        ${this.barChartHTML(stats.parFamille)}
+
+        <h3 class="section-title">Prix vs note</h3>
+        ${this.scatterHTML(stats.rows, "prix100g", "note", "Prix/100g (€)", "Note")}
+
+        <h3 class="section-title">Addictivité vs note globale</h3>
+        ${this.scatterHTML(stats.rows, "addictivite", "note", "Addictivité", "Note")}
+
+        ${phrases.length ? `
+        <h3 class="section-title">🤓 Stats absurdement sérieuses</h3>
+        <div class="fun-facts">
+          ${phrases.map((p) => `<div class="fun-fact">${escapeHTML(p)}</div>`).join("")}
+        </div>` : ""}
+        ` : `<p class="muted">Pas encore assez de données pour les statistiques.</p>`}
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  barChartHTML(data) {
+    if (!data.length) return `<p class="muted">Pas assez de données.</p>`;
+    const max = Math.max(...data.map((d) => d.avg), 10);
+    return `<div class="bar-chart">
+      ${data.slice(0, 10).map((d) => `
+        <div class="bar-row">
+          <div class="bar-label">${escapeHTML(d.label)} <span class="bar-n">(${d.n})</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(d.avg / max) * 100}%"></div></div>
+          <div class="bar-val">${fmt(d.avg)}</div>
+        </div>`).join("")}
+    </div>`;
+  },
+
+  scatterHTML(rows, xKey, yKey, xLabel, yLabel) {
+    const pts = rows.map((r) => ({ x: r[xKey], y: r[yKey], chip: r.chip })).filter((p) => p.x != null && p.y != null);
+    if (pts.length < 2) return `<p class="muted">Pas assez de données.</p>`;
+    const w = 300, h = 180, pad = 24;
+    const xMax = Math.max(...pts.map((p) => p.x)) * 1.1 || 1;
+    const yMax = 10;
+    const sx = (x) => pad + (x / xMax) * (w - pad * 2);
+    const sy = (y) => h - pad - (y / yMax) * (h - pad * 2);
+    return `<div class="card chart-card">
+      <svg viewBox="0 0 ${w} ${h}" class="scatter-svg">
+        <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" class="axis"/>
+        <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h - pad}" class="axis"/>
+        ${pts.map((p) => `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="4" class="scatter-pt"><title>${escapeHTML(p.chip.marque)}</title></circle>`).join("")}
+      </svg>
+      <div class="chart-axes"><span>${xLabel} →</span><span>↑ ${yLabel}</span></div>
+    </div>`;
+  },
+
+  /* ============================================================
+     SETTINGS
+     ============================================================ */
+  renderSettings() {
+    this.setNav("");
+    const demoLoaded = Store.isDemoLoaded();
+    $app().innerHTML = `
+      ${this.header("Paramètres", false)}
+      <div class="page">
+        <div class="card">
+          <h3 class="form-section-title">💾 Sauvegarde</h3>
+          <button class="btn btn-secondary btn-block" onclick="App.exportData()">Exporter les données (.JSON)</button>
+          <label class="btn btn-secondary btn-block file-btn">
+            Importer une sauvegarde
+            <input type="file" accept="application/json" style="display:none" onchange="App.importData(event)">
+          </label>
+          <button class="btn btn-danger btn-block" onclick="App.resetApp()">Réinitialiser CHIP CLUB</button>
+        </div>
+
+        <div class="card">
+          <h3 class="form-section-title">🧪 Données de démonstration</h3>
+          ${demoLoaded
+            ? `<button class="btn btn-secondary btn-block" onclick="App.removeDemo()">Supprimer les données de démo</button>`
+            : `<button class="btn btn-secondary btn-block" onclick="App.loadDemo()">Charger des données de démo</button>`}
+        </div>
+
+        <div class="card">
+          <h3 class="form-section-title">🎚️ Seuils de verdict</h3>
+          <div id="seuils-editor">
+            ${Store.getSeuils().map((s, i) => `
+              <div class="seuil-row">
+                <input class="input seuil-input" type="number" step="0.1" value="${s.min}" id="seuil-min-${i}">
+                <span>→</span>
+                <input class="input seuil-label" value="${escapeHTML(s.label)}" id="seuil-label-${i}">
+                <input class="input seuil-emoji" value="${s.emoji}" id="seuil-emoji-${i}">
+              </div>`).join("")}
+          </div>
+          <button class="btn btn-secondary btn-block" onclick="App.saveSeuils()">Enregistrer les seuils</button>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  exportData() {
+    const data = Store.exportJSON();
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chipclub-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        Store.importJSON(ev.target.result);
+        alert("Import réussi !");
+        this.route();
+      } catch (err) {
+        alert("Fichier invalide.");
+      }
+    };
+    reader.readAsText(file);
+  },
+  resetApp() {
+    if (!confirm("Es-tu sûr de vouloir réinitialiser CHIP CLUB ? Toutes les données seront perdues définitivement.")) return;
+    if (!confirm("Dernière confirmation : toutes les chips, notes et soirées seront supprimées.")) return;
+    Store.reset();
+    location.hash = "#/";
+    this.route();
+  },
+  removeDemo() {
+    if (!confirm("Supprimer toutes les données de démonstration ?")) return;
+    Store.removeDemoData();
+    this.route();
+  },
+  saveSeuils() {
+    const seuils = Store.getSeuils().map((s, i) => ({
+      min: parseFloat(document.getElementById(`seuil-min-${i}`).value),
+      max: s.max,
+      label: document.getElementById(`seuil-label-${i}`).value,
+      emoji: document.getElementById(`seuil-emoji-${i}`).value
+    }));
+    // recalcule les max = min du seuil supérieur
+    seuils.sort((a, b) => b.min - a.min);
+    for (let i = 1; i < seuils.length; i++) seuils[i].max = seuils[i - 1].min;
+    seuils[0].max = 10.01;
+    Store.setSeuils(seuils);
+    alert("Seuils enregistrés.");
+  },
+
+  /* ============================================================
+     COMPOSANTS COMMUNS
+     ============================================================ */
+  header(title, showBack, backHref, onBack) {
+    return `<div class="topbar">
+      ${showBack
+        ? `<button class="iconbtn" onclick="${onBack ? "App._backCb()" : `location.hash='${backHref || "#/"}'`}">←</button>`
+        : `<button class="iconbtn" onclick="App.toggleMenu()">☰</button>`}
+      <div class="brand"><span class="brand-title">${escapeHTML(title)}</span></div>
+    </div>` + (onBack ? (this._backCb = onBack, "") : "");
+  },
+  _backCb: null,
+
+  bottomNav() {
+    return `<nav class="bottomnav">
+      <button class="navbtn" data-nav="home" onclick="location.hash='#/'"><span>🏠</span>Accueil</button>
+      <button class="navbtn" data-nav="chips" onclick="location.hash='#/chips'"><span>🥔</span>Chips</button>
+      <button class="navbtn navbtn-cta" data-nav="taste" onclick="location.hash='#/soiree/new'"><span>➕</span>Déguster</button>
+      <button class="navbtn" data-nav="rank" onclick="location.hash='#/classement'"><span>🏆</span>Classement</button>
+      <button class="navbtn" data-nav="stats" onclick="location.hash='#/stats'"><span>📊</span>Stats</button>
+    </nav>`;
+  },
+
+  sideMenu() {
+    return `
+    <div class="menu-overlay" id="menuOverlay" onclick="App.toggleMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+      <div class="side-menu-title">CHIP CLUB</div>
+      <button class="side-menu-item" onclick="location.hash='#/soirees'">📅 Soirées</button>
+      <button class="side-menu-item" onclick="location.hash='#/degustateurs'">🙋 Dégustateurs</button>
+      <button class="side-menu-item" onclick="location.hash='#/halloffame'">🏛️ Hall of Fame</button>
+      <button class="side-menu-item" onclick="location.hash='#/battle'">⚔️ Chip Battle</button>
+      <button class="side-menu-item" onclick="location.hash='#/settings'">⚙️ Paramètres</button>
+    </div>`;
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => App.init());
+
+
+</script>
 </body>
 </html>
