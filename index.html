@@ -2086,15 +2086,25 @@ const App = {
       location.hash = "#/identite";
       return;
     }
-    const identity = this.getIdentity();
-    const existing = Store.getNotesByDegustation(degustationId).find((n) => n.degustateurId === identity.id);
+    this._startSingleTasterRating(degustationId, soireeId, this.getIdentity().id);
+  },
+
+  // Ajouter directement la note d'un dégustateur précis, quel que soit
+  // celui identifié sur cet appareil (utile pour rattraper la note de
+  // quelqu'un depuis un seul téléphone, comme avant).
+  noterPaquetComme(degustationId, soireeId, degustateurId) {
+    this._startSingleTasterRating(degustationId, soireeId, degustateurId);
+  },
+
+  _startSingleTasterRating(degustationId, soireeId, degustateurId) {
+    const existing = Store.getNotesByDegustation(degustationId).find((n) => n.degustateurId === degustateurId);
     if (existing) { location.hash = `#/note/${existing.id}/edit`; return; }
     const deg = Store.getDegustation(degustationId);
     this.wizard = {
       soireeId, step: "rating",
       degustationId,
       chipId: deg.chipId,
-      participants: [identity.id],
+      participants: [degustateurId],
       participantIndex: 0,
       criteriaIndex: 0,
       bonusIndex: 0,
@@ -2646,6 +2656,9 @@ const App = {
     const row = Calc.battleRow(chipId);
     const deg = Store.getDegustations().find((d) => d.chipId === chipId);
     const notes = deg ? Store.getNotesByDegustation(deg.id) : [];
+    const soiree = deg ? Store.getSoiree(deg.soireeId) : null;
+    const votedIds = notes.map((n) => n.degustateurId);
+    const missingTasters = soiree ? soiree.participantsIds.filter((id) => !votedIds.includes(id)).map((id) => Store.getDegustateur(id)).filter(Boolean) : [];
 
     $app().innerHTML = `
       ${this.header(chip.marque, true, "#/chips")}
@@ -2690,7 +2703,7 @@ const App = {
             return `<div class="comment-row"><b>${t ? t.avatarEmoji + " " + escapeHTML(t.nom) : "?"}</b> — « ${escapeHTML(n.commentaire)} »</div>`;
           }).join("")}` : ""}
 
-          ${notes.length ? `
+          ${notes.length || missingTasters.length ? `
           <h3 class="form-section-title">📝 Notes individuelles</h3>
           <div class="note-list">
             ${notes.map((n) => {
@@ -2702,6 +2715,11 @@ const App = {
                 <button class="btn btn-small btn-ghost" onclick="location.hash='#/note/${n.id}/edit'">✏️ Modifier</button>
               </div>`;
             }).join("")}
+            ${missingTasters.map((t) => `<div class="note-row">
+              <div class="note-row-who">${t.avatarEmoji} ${escapeHTML(t.nom)}</div>
+              <div class="note-row-score muted">Pas encore noté</div>
+              <button class="btn btn-small btn-primary" onclick="App.noterPaquetComme('${deg.id}', '${soiree.id}', '${t.id}')">📝 Noter</button>
+            </div>`).join("")}
           </div>` : ""}
         </div>
       </div>
