@@ -362,6 +362,8 @@ a { color: inherit; }
 .list-card { cursor: pointer; }
 .lc-title { font-weight: 700; font-size: 15.5px; }
 .lc-sub { font-size: 12.5px; color: var(--anthracite-soft); margin-top: 3px; }
+.lc-with-action { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lc-main { flex: 1; min-width: 0; }
 
 .recap-header { text-align: center; }
 .recap-date { font-size: 13px; color: var(--anthracite-soft); }
@@ -1071,6 +1073,26 @@ const Store = {
   },
   getSoirees() { return this._state.soirees.slice().sort((a, b) => new Date(b.date) - new Date(a.date)); },
   getSoiree(id) { return this._state.soirees.find((s) => s.id === id); },
+  // Supprime la soirée, ses paquets, leurs dégustations et toutes les notes
+  // associées (cascade gérée côté base, cache local nettoyé immédiatement).
+  deleteSoiree(id) {
+    const degs = this._state.degustations.filter((d) => d.soireeId === id);
+    const degIds = degs.map((d) => d.id);
+    const chipIds = degs.map((d) => d.chipId);
+
+    this._state.soirees = this._state.soirees.filter((s) => s.id !== id);
+    this._state.degustations = this._state.degustations.filter((d) => d.soireeId !== id);
+    this._state.notes = this._state.notes.filter((n) => !degIds.includes(n.degustationId));
+    this._state.chips = this._state.chips.filter((c) => !chipIds.includes(c.id));
+
+    this._bg(async () => {
+      if (chipIds.length) {
+        const r1 = await this._client.from(TABLES.chips).delete().in("id", chipIds);
+        if (r1.error) return r1;
+      }
+      return this._client.from(TABLES.soirees).delete().eq("id", id);
+    }, "deleteSoiree");
+  },
 
   /* ---------- Chips (fiches produit) ---------- */
   addChip(chip) {
@@ -2397,9 +2419,12 @@ const App = {
       <div class="page">
         ${soirees.length ? soirees.map((s) => {
           const degs = Store.getDegustationsBySoiree(s.id);
-          return `<div class="card list-card" onclick="location.hash='#/soiree/${s.id}'">
-            <div class="lc-title">${escapeHTML(s.nom)}</div>
-            <div class="lc-sub">${s.date} · ${degs.length} paquets · ${s.participantsIds.length} dégustateurs</div>
+          return `<div class="card list-card lc-with-action" onclick="location.hash='#/soiree/${s.id}'">
+            <div class="lc-main">
+              <div class="lc-title">${escapeHTML(s.nom)}</div>
+              <div class="lc-sub">${s.date} · ${degs.length} paquets · ${s.participantsIds.length} dégustateurs</div>
+            </div>
+            <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); App.confirmDeleteSoiree('${s.id}')">🗑️</button>
           </div>`;
         }).join("") : `<p class="muted">Aucune soirée pour l'instant.</p>`}
         <button class="btn btn-primary btn-lg btn-block" onclick="location.hash='#/soiree/new'">+ Nouvelle soirée</button>
@@ -2441,10 +2466,20 @@ const App = {
         ${this.rankTableHTML(rows.slice().sort((a, b) => b.note - a.note))}
 
         <button class="btn btn-primary btn-lg btn-block" onclick="location.hash='#/soiree/${soireeId}/deguster'">Continuer cette soirée</button>
+        <button class="btn btn-danger btn-block" onclick="App.confirmDeleteSoiree('${soireeId}')">🗑️ Supprimer la soirée</button>
       </div>
       ${this.bottomNav()}
       ${this.sideMenu()}
     `;
+  },
+
+  confirmDeleteSoiree(soireeId) {
+    const soiree = Store.getSoiree(soireeId);
+    if (!soiree) return;
+    if (!confirm(`Supprimer « ${soiree.nom} » ? Cette action supprime aussi tous ses paquets, dégustations et notes, pour tout le monde.`)) return;
+    Store.deleteSoiree(soireeId);
+    location.hash = "#/soirees";
+    this.route();
   },
 
   /* ============================================================
