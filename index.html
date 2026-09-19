@@ -21,7 +21,6 @@
 <meta name="twitter:description" content="Le classement très sérieux de chips pas très sérieuses.">
 <meta name="twitter:image" content="https://chip-club.vercel.app/og-image.jpg">
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap">
 <style>
 /* ============================================================
    CHIP CLUB — styles.css
@@ -50,7 +49,6 @@
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-display: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
-
 
 
 * { box-sizing: border-box; }
@@ -319,7 +317,20 @@ a { color: inherit; }
   display: flex; align-items: center; gap: 10px;
 }
 .option-btn:active { background: #FBEADE; border-color: var(--burnt-orange); }
+.option-btn.active { background: #FBEADE; border-color: var(--burnt-orange); box-shadow: 0 0 0 1.5px var(--burnt-orange) inset; }
 .opt-emoji { font-size: 20px; }
+
+/* ---------- Édition d'une note ---------- */
+.edit-crit-row { text-align: left; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+.edit-crit-row .rate-label { font-size: 15px; }
+.edit-crit-row .rate-value { font-size: 24px; margin: 4px 0; }
+.edit-crit-row:last-of-type { border: none; }
+
+.note-list { margin-top: 4px; }
+.note-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.note-row:last-child { border: none; }
+.note-row-who { font-weight: 700; font-size: 13.5px; flex: 1; }
+.note-row-score { font-weight: 700; color: var(--burnt-orange-deep); font-size: 14px; }
 
 /* ---------- Reveal ---------- */
 .reveal-card { text-align: center; padding: 30px 20px; }
@@ -544,10 +555,10 @@ a { color: inherit; }
 </head>
 <body>
 <div id="app"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-
-/* ===== js/data.js ===== */
+/* ===== data.js ===== */
 /* ============================================================
    CHIP CLUB — data.js
    Référentiels statiques : familles, formes, cuissons, saveurs,
@@ -825,7 +836,7 @@ function labelOf(list, id, fallback) {
 }
 
 
-/* ===== js/store.js ===== */
+/* ===== store.js ===== */
 /* ============================================================
    CHIP CLUB — store.js
    Couche de persistance partagée (Supabase).
@@ -1089,8 +1100,16 @@ const Store = {
     return n;
   },
   getNotes() { return this._state.notes; },
+  getNote(id) { return this._state.notes.find((n) => n.id === id); },
   getNotesByDegustation(degustationId) { return this._state.notes.filter((n) => n.degustationId === degustationId); },
   getNotesByDegustateur(degustateurId) { return this._state.notes.filter((n) => n.degustateurId === degustateurId); },
+  updateNote(id, patch) {
+    const n = this._state.notes.find((x) => x.id === id);
+    if (!n) return null;
+    Object.assign(n, patch);
+    this._bg(() => this._client.from(TABLES.notes).update(patch).eq("id", id), "updateNote");
+    return n;
+  },
 
   /* ---------- Seuils verdict ---------- */
   getSeuils() { return this._state.seuils && this._state.seuils.length ? this._state.seuils : SEUILS_VERDICT; },
@@ -1176,7 +1195,7 @@ function pickAvatar(nom) {
 }
 
 
-/* ===== js/calc.js ===== */
+/* ===== calc.js ===== */
 /* ============================================================
    CHIP CLUB — calc.js
    Toutes les fonctions de calcul : moyennes, classement,
@@ -1510,7 +1529,7 @@ const Calc = {
 };
 
 
-/* ===== js/demo.js ===== */
+/* ===== demo.js ===== */
 /* ============================================================
    CHIP CLUB — demo.js
    Génère des données de démonstration : 4 dégustateurs,
@@ -1629,7 +1648,7 @@ function daysAgo(n) {
 }
 
 
-/* ===== js/app.js ===== */
+/* ===== app.js ===== */
 /* ============================================================
    CHIP CLUB — app.js
    Router + vues + logique d'interface.
@@ -1687,6 +1706,7 @@ const App = {
     if (parts[0] === "soirees") return this.renderSoireesList();
     if (parts[0] === "chips") return this.renderChipsList();
     if (parts[0] === "chip" && parts[1]) return this.renderChipDetail(parts[1]);
+    if (parts[0] === "note" && parts[1] && parts[2] === "edit") return this.renderEditNote(parts[1]);
     if (parts[0] === "classement") return this.renderClassement();
     if (parts[0] === "halloffame") return this.renderHallOfFame();
     if (parts[0] === "degustateurs") return this.renderDegustateursList();
@@ -1753,6 +1773,18 @@ const App = {
         </div>
 
         ${podium.length ? `<h3 class="section-title">Podium actuel</h3>${this.podiumHTML(podium)}` : ""}
+
+        ${stats.nbSoirees ? `
+        <h3 class="section-title">Soirées récentes</h3>
+        ${Store.getSoirees().slice(0, 3).map((s) => {
+          const degs = Store.getDegustationsBySoiree(s.id);
+          return `<div class="card list-card" onclick="location.hash='#/soiree/${s.id}'">
+            <div class="lc-title">${escapeHTML(s.nom)}</div>
+            <div class="lc-sub">${s.date} · ${degs.length} paquets · ${s.participantsIds.length} dégustateurs</div>
+          </div>`;
+        }).join("")}
+        <button class="btn btn-ghost btn-block" onclick="location.hash='#/soirees'">Voir toutes les soirées</button>
+        ` : ""}
 
         ${hof ? `
         <h3 class="section-title">En bref</h3>
@@ -2470,11 +2502,111 @@ const App = {
             const t = Store.getDegustateur(n.degustateurId);
             return `<div class="comment-row"><b>${t ? t.avatarEmoji + " " + escapeHTML(t.nom) : "?"}</b> — « ${escapeHTML(n.commentaire)} »</div>`;
           }).join("")}` : ""}
+
+          ${notes.length ? `
+          <h3 class="form-section-title">📝 Notes individuelles</h3>
+          <div class="note-list">
+            ${notes.map((n) => {
+              const t = Store.getDegustateur(n.degustateurId);
+              const avg = Calc.degustateurMoyenne(deg.id, n.degustateurId);
+              return `<div class="note-row">
+                <div class="note-row-who">${t ? t.avatarEmoji + " " + escapeHTML(t.nom) : "?"}</div>
+                <div class="note-row-score">${fmt(avg)}/10</div>
+                <button class="btn btn-small btn-ghost" onclick="location.hash='#/note/${n.id}/edit'">✏️ Modifier</button>
+              </div>`;
+            }).join("")}
+          </div>` : ""}
         </div>
       </div>
       ${this.bottomNav()}
       ${this.sideMenu()}
     `;
+  },
+
+  /* ============================================================
+     MODIFIER UNE NOTE
+     ============================================================ */
+  renderEditNote(noteId) {
+    this.setNav("chips");
+    const note = Store.getNote(noteId);
+    if (!note) return this.renderDashboard();
+    const deg = Store.getDegustation(note.degustationId);
+    const chip = deg ? Store.getChip(deg.chipId) : null;
+    const taster = Store.getDegustateur(note.degustateurId);
+    const backHash = chip ? `#/chip/${chip.id}` : "#/";
+
+    $app().innerHTML = `
+      ${this.header(`Modifier — ${taster ? taster.nom : ""}`, true, backHash)}
+      <div class="page">
+        <div class="card">
+          ${chip ? `<div class="chip-mini-card">
+            <div class="cmc-brand">${escapeHTML(chip.marque)} ${chip.nomCommercial ? "— " + escapeHTML(chip.nomCommercial) : ""}</div>
+            <div class="cmc-flavor">${escapeHTML(chip.saveurLabel)}</div>
+          </div>` : ""}
+
+          <h3 class="form-section-title">Critères</h3>
+          ${CRITERES.map((c) => {
+            const val = note.criteres && note.criteres[c.id] != null ? note.criteres[c.id] : 5;
+            return `
+            <div class="rate-question edit-crit-row">
+              <div class="rate-label">${escapeHTML(c.label)}</div>
+              <div class="rate-value" id="edit-val-${c.id}">${fmt(val)}</div>
+              <input type="range" class="slider" min="0" max="10" step="0.5" value="${val}" id="edit-crit-${c.id}"
+                oninput="document.getElementById('edit-val-${c.id}').textContent = (+this.value).toFixed(1).replace('.', ',')">
+            </div>`;
+          }).join("")}
+
+          <h3 class="form-section-title">Tu rachètes ?</h3>
+          <div class="option-grid" id="edit-racheter">
+            ${RACHETER_OPTIONS.map((o) => `<button type="button" class="option-btn${note.racheter === o.id ? " active" : ""}" data-id="${o.id}" onclick="App.selectSingle(this, '#edit-racheter')"><span class="opt-emoji">${o.emoji}</span>${o.label}</button>`).join("")}
+          </div>
+
+          <h3 class="form-section-title">Le paquet survit combien de temps ?</h3>
+          <div class="option-grid vertical" id="edit-survie">
+            ${SURVIE_PAQUET.map((o) => `<button type="button" class="option-btn${note.survie === o.valeur ? " active" : ""}" data-id="${o.valeur}" onclick="App.selectSingle(this, '#edit-survie')">${o.valeur} — ${o.label}</button>`).join("")}
+          </div>
+
+          <h3 class="form-section-title">Avec quoi tu la manges ?</h3>
+          <div class="chip-select" id="edit-contextes">
+            ${CONTEXTES.map((c) => `<button type="button" class="chip-opt${(note.contextes || []).includes(c.id) ? " active" : ""}" data-id="${c.id}" onclick="App.toggleChipOpt(this)">${escapeHTML(c.label)}</button>`).join("")}
+          </div>
+
+          <h3 class="form-section-title">Commentaire / punchline</h3>
+          <textarea class="input textarea" id="edit-commentaire" placeholder="Commentaire…">${escapeHTML(note.commentaire || "")}</textarea>
+
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.saveEditNote('${note.id}', '${backHash}')">Enregistrer les modifications</button>
+        </div>
+      </div>
+      ${this.bottomNav()}
+      ${this.sideMenu()}
+    `;
+  },
+
+  selectSingle(btn, groupSelector) {
+    document.querySelectorAll(`${groupSelector} .option-btn`).forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+  },
+
+  saveEditNote(noteId, backHash) {
+    const criteres = {};
+    CRITERES.forEach((c) => {
+      const el = document.getElementById(`edit-crit-${c.id}`);
+      criteres[c.id] = el ? +el.value : 0;
+    });
+    const rachBtn = document.querySelector("#edit-racheter .option-btn.active");
+    const survieBtn = document.querySelector("#edit-survie .option-btn.active");
+    const contextes = [...document.querySelectorAll("#edit-contextes .chip-opt.active")].map((b) => b.dataset.id);
+    const commentaire = (document.getElementById("edit-commentaire").value || "").trim();
+
+    Store.updateNote(noteId, {
+      criteres,
+      racheter: rachBtn ? rachBtn.dataset.id : null,
+      survie: survieBtn ? +survieBtn.dataset.id : null,
+      contextes,
+      commentaire
+    });
+
+    location.hash = backHash;
   },
 
   /* ============================================================
@@ -2960,7 +3092,6 @@ const App = {
 };
 
 document.addEventListener("DOMContentLoaded", () => App.init());
-
 
 </script>
 </body>
