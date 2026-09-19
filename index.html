@@ -525,10 +525,26 @@ a { color: inherit; }
   #app { box-shadow: 0 0 60px rgba(0,0,0,0.06); min-height: 100vh; background: var(--cream); }
 }
 
+/* ---------- Écran de connexion (Supabase) ---------- */
+.boot-screen {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 40px; gap: 8px;
+}
+.boot-emoji { font-size: 48px; animation: boot-pulse 1.4s ease-in-out infinite; }
+@keyframes boot-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: .7; } }
+.boot-title { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
+.boot-sub { font-size: 13.5px; color: var(--anthracite-soft); max-width: 280px; }
+.boot-error {
+  margin-top: 10px; font-size: 12px; font-family: monospace; color: var(--danger);
+  background: rgba(192,67,46,0.08); border-radius: 10px; padding: 10px 14px; max-width: 320px;
+  word-break: break-word;
+}
+
 </style>
 </head>
 <body>
 <div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 
 /* ===== js/data.js ===== */
@@ -812,13 +828,21 @@ function labelOf(list, id, fallback) {
 /* ===== js/store.js ===== */
 /* ============================================================
    CHIP CLUB — store.js
-   Couche de persistance localStorage.
-   Schéma pensé "table par table" pour faciliter une migration
-   future vers Supabase (chaque collection = future table SQL,
-   chaque id = future clé primaire, chaque *_id = future clé étrangère).
+   Couche de persistance partagée (Supabase).
+   Toutes les personnes qui ouvrent le lien lisent/écrivent dans
+   la même base — pas de compte, juste la clé publique du projet.
+
+   Design : un cache local en mémoire (this._state) donne à app.js
+   et calc.js une API 100% synchrone (identique à la version
+   localStorage précédente). Chaque mutation met à jour ce cache
+   immédiatement (l'interface réagit à l'instant), puis envoie
+   l'écriture à Supabase en tâche de fond. Les changements faits
+   par les autres arrivent via Supabase Realtime et rafraîchissent
+   le cache + l'écran automatiquement.
    ============================================================ */
 
-const STORAGE_KEY = "chipclub_v1";
+const SUPABASE_URL = "https://caktweggxspdbwfrlexr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNha3R3ZWdneHNwZGJ3ZnJsZXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MTI2NTUsImV4cCI6MjEwNTM4ODY1NX0.cotAoYDuhrWC8G6tN9TczhQYZ7tbE-Hnp24GCUd_ZKc";
 
 /* Le club fondateur : ces dégustateurs sont créés automatiquement au premier
    lancement, pour ne pas avoir à les ressaisir à chaque nouvelle soirée. */
@@ -830,268 +854,305 @@ const DEFAULT_TASTERS = [
 ];
 
 const DEFAULT_STATE = {
-  meta: {
-    version: 1,
-    createdAt: null
-  },
-  degustateurs: [],   // { id, nom, avatarEmoji, createdAt }
-  marques: [],        // { id, nom }
-  saveursPerso: [],    // saveurs personnalisées ajoutées par l'utilisateur, même forme que SAVEURS
-  famillesPerso: [],   // familles de chips personnalisées, même forme que FAMILLES
-  soirees: [],         // { id, nom, date, participantsIds[], mode, createdAt }
-  chips: [],           // fiche produit (identité + classification), voir schéma plus bas
-  degustations: [],    // une dégustation = une chips dans une soirée: { id, soireeId, chipId, revele, createdAt }
-  notes: [],           // { id, degustationId, degustateurId, criteres:{...}, racheter, survie, contextes[], commentaire, createdAt }
-  seuils: null,        // override des seuils de verdict, sinon défault
-  settings: {
-    demoLoaded: false
-  }
+  degustateurs: [], marques: [], saveursPerso: [], famillesPerso: [],
+  soirees: [], chips: [], degustations: [], notes: [],
+  seuils: null, settings: { demoLoaded: false }
 };
 
-/* Schéma d'une "chips" (fiche produit) :
-{
-  id, createdAt,
-  photo: dataURL|null,
-  marque, nomCommercial, saveurId, saveurLabel, saveurFamilleId,
-  gamme, paysOrigine, magasin, prix, poids,
-  familleId, formeId, cuissonId,
-  piquant: 0-5,
-  isDemo: bool
-}
-*/
+const TABLES = {
+  degustateurs: "degustateurs", marques: "marques",
+  saveursPerso: "saveurs_perso", famillesPerso: "familles_perso",
+  soirees: "soirees", chips: "chips",
+  degustations: "degustations", notes: "notes"
+};
 
 const Store = {
   _state: null,
+  _client: null,
+  _ready: false,
+  _onChange: null, // callback appelé quand des données changent à distance
 
-  load() {
-    if (this._state) return this._state;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        this._state = JSON.parse(raw);
-        // merge defaults for forward-compat (nouvelles clés ajoutées après coup)
-        this._state = Object.assign({}, DEFAULT_STATE, this._state);
-        for (const k of Object.keys(DEFAULT_STATE)) {
-          if (this._state[k] === undefined) this._state[k] = DEFAULT_STATE[k];
-        }
-      } else {
-        this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        this._state.meta.createdAt = new Date().toISOString();
-        this._seedDefaultTasters();
-        this.save();
-      }
-    } catch (e) {
-      console.error("Erreur de lecture du stockage, réinitialisation.", e);
-      this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-      this._state.meta.createdAt = new Date().toISOString();
-      this._seedDefaultTasters();
-      this.save();
+  /* ---------- Connexion + chargement initial ---------- */
+  async init(onRemoteChange) {
+    this._onChange = onRemoteChange || null;
+    this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    this._client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    await this._fetchAll();
+    if (!this._state.degustateurs.length) {
+      await this._seedDefaultTasters();
     }
+    this._subscribeRealtime();
+    this._ready = true;
     return this._state;
   },
 
-  save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state));
-    } catch (e) {
-      console.error("Erreur d'écriture du stockage", e);
-      alert("Impossible de sauvegarder : stockage plein ou indisponible.");
+  async _fetchAll() {
+    const c = this._client;
+    const named = {
+      degustateurs: c.from(TABLES.degustateurs).select("*"),
+      marques: c.from(TABLES.marques).select("*"),
+      saveursPerso: c.from(TABLES.saveursPerso).select("*"),
+      famillesPerso: c.from(TABLES.famillesPerso).select("*"),
+      soirees: c.from(TABLES.soirees).select("*"),
+      chips: c.from(TABLES.chips).select("*"),
+      degustations: c.from(TABLES.degustations).select("*"),
+      notes: c.from(TABLES.notes).select("*"),
+      settings: c.from("settings").select("*").eq("id", "global").maybeSingle()
+    };
+    const keys = Object.keys(named);
+    const results = await Promise.all(keys.map((k) => named[k]));
+    const byKey = {};
+    keys.forEach((k, i) => { byKey[k] = results[i]; });
+
+    // Si une seule requête échoue (table absente, permissions...), on le dit
+    // clairement plutôt que de charger silencieusement un état vide.
+    const errors = keys.filter((k) => byKey[k].error).map((k) => `${k} : ${byKey[k].error.message}`);
+    if (errors.length) {
+      throw new Error("Erreur Supabase — " + errors.join(" | "));
     }
+
+    this._state.degustateurs = byKey.degustateurs.data || [];
+    this._state.marques = byKey.marques.data || [];
+    this._state.saveursPerso = byKey.saveursPerso.data || [];
+    this._state.famillesPerso = byKey.famillesPerso.data || [];
+    this._state.soirees = byKey.soirees.data || [];
+    this._state.chips = byKey.chips.data || [];
+    this._state.degustations = byKey.degustations.data || [];
+    this._state.notes = byKey.notes.data || [];
+    this._state.seuils = byKey.settings.data ? byKey.settings.data.seuils : null;
+    this._state.settings = { demoLoaded: byKey.settings.data ? !!byKey.settings.data.demoLoaded : false };
   },
 
-  reset() {
-    this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-    this._state.meta.createdAt = new Date().toISOString();
-    this._seedDefaultTasters();
-    this.save();
+  async _refetchTable(key) {
+    const table = TABLES[key];
+    if (!table) return;
+    const { data } = await this._client.from(table).select("*");
+    this._state[key] = data || [];
   },
 
-  _seedDefaultTasters() {
-    for (const t of DEFAULT_TASTERS) {
-      if (!this._state.degustateurs.some((d) => d.nom.toLowerCase() === t.nom.toLowerCase())) {
-        this._state.degustateurs.push({
-          id: uid("taster"), nom: t.nom, avatarEmoji: t.avatarEmoji,
-          createdAt: new Date().toISOString(), isDemo: false
-        });
+  _subscribeRealtime() {
+    const c = this._client;
+    const refresh = (key) => {
+      // léger débounce : plusieurs events proches -> un seul refetch
+      clearTimeout(this["_t_" + key]);
+      this["_t_" + key] = setTimeout(async () => {
+        await this._refetchTable(key);
+        if (this._onChange) this._onChange();
+      }, 250);
+    };
+    c.channel("chipclub-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.degustateurs }, () => refresh("degustateurs"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.marques }, () => refresh("marques"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.saveursPerso }, () => refresh("saveursPerso"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.famillesPerso }, () => refresh("famillesPerso"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.soirees }, () => refresh("soirees"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.chips }, () => refresh("chips"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.degustations }, () => refresh("degustations"))
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLES.notes }, () => refresh("notes"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, async () => {
+        clearTimeout(this._t_settings);
+        this._t_settings = setTimeout(async () => {
+          const { data } = await this._client.from("settings").select("*").eq("id", "global").maybeSingle();
+          this._state.seuils = data ? data.seuils : null;
+          this._state.settings = { demoLoaded: data ? !!data.demoLoaded : false };
+          if (this._onChange) this._onChange();
+        }, 250);
+      })
+      .subscribe();
+  },
+
+  _bg(promise, label) {
+    // écriture en tâche de fond : le cache local est déjà à jour,
+    // on log juste une erreur réseau éventuelle sans bloquer l'interface.
+    Promise.resolve(promise).then(({ error }) => {
+      if (error) {
+        console.error("Erreur Supabase (" + label + ")", error);
+        alert("⚠️ Écriture refusée par la base partagée (" + label + ") :\n" + error.message + "\n\nCette modification n'est peut-être pas sauvegardée pour les autres.");
       }
-    }
+    });
+  },
+
+  load() { return this._state; },
+
+  async _seedDefaultTasters() {
+    const rows = DEFAULT_TASTERS.map((t) => ({
+      id: uid("taster"), nom: t.nom, avatarEmoji: t.avatarEmoji,
+      isDemo: false, createdAt: new Date().toISOString()
+    }));
+    this._state.degustateurs.push(...rows);
+    await this._client.from(TABLES.degustateurs).insert(rows);
   },
 
   /* ---------- Dégustateurs ---------- */
-  getDegustateurs() {
-    return this.load().degustateurs;
-  },
+  getDegustateurs() { return this._state.degustateurs; },
   addDegustateur(nom, avatarEmoji) {
-    const s = this.load();
-    let existing = s.degustateurs.find((d) => d.nom.toLowerCase() === nom.toLowerCase());
+    let existing = this._state.degustateurs.find((d) => d.nom.toLowerCase() === nom.toLowerCase());
     if (existing) return existing;
-    const d = { id: uid("taster"), nom, avatarEmoji: avatarEmoji || pickAvatar(nom), createdAt: new Date().toISOString() };
-    s.degustateurs.push(d);
-    this.save();
+    const d = { id: uid("taster"), nom, avatarEmoji: avatarEmoji || pickAvatar(nom), isDemo: false, createdAt: new Date().toISOString() };
+    this._state.degustateurs.push(d);
+    this._bg(this._client.from(TABLES.degustateurs).insert([d]), "addDegustateur");
     return d;
   },
-  getDegustateur(id) {
-    return this.load().degustateurs.find((d) => d.id === id);
-  },
+  getDegustateur(id) { return this._state.degustateurs.find((d) => d.id === id); },
 
   /* ---------- Marques ---------- */
   addMarque(nom) {
-    const s = this.load();
-    let existing = s.marques.find((m) => m.nom.toLowerCase() === nom.toLowerCase());
+    let existing = this._state.marques.find((m) => m.nom.toLowerCase() === nom.toLowerCase());
     if (existing) return existing;
     const m = { id: uid("brand"), nom };
-    s.marques.push(m);
-    this.save();
+    this._state.marques.push(m);
+    this._bg(this._client.from(TABLES.marques).insert([m]), "addMarque");
     return m;
   },
-  getMarques() {
-    return this.load().marques;
-  },
+  getMarques() { return this._state.marques; },
 
   /* ---------- Saveurs personnalisées ---------- */
   addSaveurPerso(label, familleId) {
-    const s = this.load();
     const id = "perso-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
-    let existing = s.saveursPerso.find((sv) => sv.id === id);
+    let existing = this._state.saveursPerso.find((sv) => sv.id === id);
     if (existing) return existing;
     const sv = { id, label, familleId };
-    s.saveursPerso.push(sv);
-    this.save();
+    this._state.saveursPerso.push(sv);
+    this._bg(this._client.from(TABLES.saveursPerso).insert([sv]), "addSaveurPerso");
     return sv;
   },
-  getAllSaveurs() {
-    return SAVEURS.concat(this.load().saveursPerso);
-  },
+  getAllSaveurs() { return SAVEURS.concat(this._state.saveursPerso); },
 
   /* ---------- Familles personnalisées ---------- */
   addFamillePerso(label) {
-    const s = this.load();
     const id = "perso-fam-" + label.toLowerCase().normalize("NFD").replace(/\p{Mark}/gu, "").replace(/[^a-z0-9]+/g, "-");
-    let existing = s.famillesPerso.find((f) => f.id === id);
+    let existing = this._state.famillesPerso.find((f) => f.id === id);
     if (existing) return existing;
     const f = { id, label, emoji: "❓" };
-    s.famillesPerso.push(f);
-    this.save();
+    this._state.famillesPerso.push(f);
+    this._bg(this._client.from(TABLES.famillesPerso).insert([f]), "addFamillePerso");
     return f;
   },
-  getAllFamilles() {
-    return FAMILLES.concat(this.load().famillesPerso);
-  },
+  getAllFamilles() { return FAMILLES.concat(this._state.famillesPerso); },
 
   /* ---------- Soirées ---------- */
   addSoiree(soiree) {
-    const s = this.load();
-    const o = Object.assign({ id: uid("night"), createdAt: new Date().toISOString() }, soiree);
-    s.soirees.push(o);
-    this.save();
+    const o = Object.assign({ id: uid("night"), isDemo: false, createdAt: new Date().toISOString() }, soiree);
+    this._state.soirees.push(o);
+    this._bg(this._client.from(TABLES.soirees).insert([o]), "addSoiree");
     return o;
   },
-  getSoirees() {
-    return this.load().soirees.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-  },
-  getSoiree(id) {
-    return this.load().soirees.find((s) => s.id === id);
-  },
+  getSoirees() { return this._state.soirees.slice().sort((a, b) => new Date(b.date) - new Date(a.date)); },
+  getSoiree(id) { return this._state.soirees.find((s) => s.id === id); },
 
   /* ---------- Chips (fiches produit) ---------- */
   addChip(chip) {
-    const s = this.load();
-    const c = Object.assign({ id: uid("chip"), createdAt: new Date().toISOString() }, chip);
-    s.chips.push(c);
-    this.save();
+    const c = Object.assign({ id: uid("chip"), isDemo: false, createdAt: new Date().toISOString() }, chip);
+    this._state.chips.push(c);
+    this._bg(this._client.from(TABLES.chips).insert([c]), "addChip");
     return c;
   },
-  getChips() {
-    return this.load().chips;
-  },
-  getChip(id) {
-    return this.load().chips.find((c) => c.id === id);
-  },
+  getChips() { return this._state.chips; },
+  getChip(id) { return this._state.chips.find((c) => c.id === id); },
 
   /* ---------- Dégustations (chips x soirée) ---------- */
   addDegustation(deg) {
-    const s = this.load();
     const d = Object.assign({ id: uid("tasting"), revele: false, createdAt: new Date().toISOString() }, deg);
-    s.degustations.push(d);
-    this.save();
+    this._state.degustations.push(d);
+    this._bg(this._client.from(TABLES.degustations).insert([d]), "addDegustation");
     return d;
   },
-  getDegustations() {
-    return this.load().degustations;
-  },
-  getDegustation(id) {
-    return this.load().degustations.find((d) => d.id === id);
-  },
-  getDegustationsBySoiree(soireeId) {
-    return this.load().degustations.filter((d) => d.soireeId === soireeId);
-  },
+  getDegustations() { return this._state.degustations; },
+  getDegustation(id) { return this._state.degustations.find((d) => d.id === id); },
+  getDegustationsBySoiree(soireeId) { return this._state.degustations.filter((d) => d.soireeId === soireeId); },
   revelerDegustation(id) {
-    const s = this.load();
-    const d = s.degustations.find((x) => x.id === id);
-    if (d) { d.revele = true; this.save(); }
+    const d = this._state.degustations.find((x) => x.id === id);
+    if (d) {
+      d.revele = true;
+      this._bg(this._client.from(TABLES.degustations).update({ revele: true }).eq("id", id), "revelerDegustation");
+    }
     return d;
   },
 
   /* ---------- Notes individuelles ---------- */
   addNote(note) {
-    const s = this.load();
     const n = Object.assign({ id: uid("note"), createdAt: new Date().toISOString() }, note);
-    s.notes.push(n);
-    this.save();
+    this._state.notes.push(n);
+    this._bg(this._client.from(TABLES.notes).insert([n]), "addNote");
     return n;
   },
-  getNotes() {
-    return this.load().notes;
-  },
-  getNotesByDegustation(degustationId) {
-    return this.load().notes.filter((n) => n.degustationId === degustationId);
-  },
-  getNotesByDegustateur(degustateurId) {
-    return this.load().notes.filter((n) => n.degustateurId === degustateurId);
-  },
+  getNotes() { return this._state.notes; },
+  getNotesByDegustation(degustationId) { return this._state.notes.filter((n) => n.degustationId === degustationId); },
+  getNotesByDegustateur(degustateurId) { return this._state.notes.filter((n) => n.degustateurId === degustateurId); },
 
   /* ---------- Seuils verdict ---------- */
-  getSeuils() {
-    const s = this.load();
-    return s.seuils && s.seuils.length ? s.seuils : SEUILS_VERDICT;
-  },
+  getSeuils() { return this._state.seuils && this._state.seuils.length ? this._state.seuils : SEUILS_VERDICT; },
   setSeuils(seuils) {
-    const s = this.load();
-    s.seuils = seuils;
-    this.save();
+    this._state.seuils = seuils;
+    this._bg(this._client.from("settings").upsert({ id: "global", seuils, demoLoaded: this._state.settings.demoLoaded }), "setSeuils");
   },
 
   /* ---------- Export / Import / Reset ---------- */
-  exportJSON() {
-    return JSON.stringify(this.load(), null, 2);
-  },
-  importJSON(json) {
+  exportJSON() { return JSON.stringify(this._state, null, 2); },
+  async importJSON(json) {
     const parsed = JSON.parse(json);
+    // Remplace les données locales ET les republie sur Supabase (upsert table par table)
     this._state = Object.assign({}, DEFAULT_STATE, parsed);
-    this.save();
+    const c = this._client;
+    const ops = [];
+    if (this._state.degustateurs.length) ops.push(c.from(TABLES.degustateurs).upsert(this._state.degustateurs));
+    if (this._state.marques.length) ops.push(c.from(TABLES.marques).upsert(this._state.marques));
+    if (this._state.saveursPerso.length) ops.push(c.from(TABLES.saveursPerso).upsert(this._state.saveursPerso));
+    if (this._state.famillesPerso.length) ops.push(c.from(TABLES.famillesPerso).upsert(this._state.famillesPerso));
+    if (this._state.soirees.length) ops.push(c.from(TABLES.soirees).upsert(this._state.soirees));
+    if (this._state.chips.length) ops.push(c.from(TABLES.chips).upsert(this._state.chips));
+    if (this._state.degustations.length) ops.push(c.from(TABLES.degustations).upsert(this._state.degustations));
+    if (this._state.notes.length) ops.push(c.from(TABLES.notes).upsert(this._state.notes));
+    ops.push(c.from("settings").upsert({ id: "global", seuils: this._state.seuils, demoLoaded: this._state.settings.demoLoaded }));
+    await Promise.all(ops);
   },
 
   /* ---------- Démo ---------- */
-  isDemoLoaded() {
-    return !!this.load().settings.demoLoaded;
-  },
+  isDemoLoaded() { return !!this._state.settings.demoLoaded; },
   setDemoLoaded(v) {
-    const s = this.load();
-    s.settings.demoLoaded = v;
-    this.save();
+    this._state.settings.demoLoaded = v;
+    this._bg(this._client.from("settings").upsert({ id: "global", seuils: this._state.seuils, demoLoaded: v }), "setDemoLoaded");
   },
-  removeDemoData() {
-    const s = this.load();
+  async removeDemoData() {
+    const s = this._state;
     const demoChipIds = s.chips.filter((c) => c.isDemo).map((c) => c.id);
     const demoSoireeIds = s.soirees.filter((so) => so.isDemo).map((so) => so.id);
     const demoDegIds = s.degustations.filter((d) => demoChipIds.includes(d.chipId) || demoSoireeIds.includes(d.soireeId)).map((d) => d.id);
+
     s.notes = s.notes.filter((n) => !demoDegIds.includes(n.degustationId));
     s.degustations = s.degustations.filter((d) => !demoDegIds.includes(d.id));
     s.chips = s.chips.filter((c) => !c.isDemo);
     s.soirees = s.soirees.filter((so) => !so.isDemo);
     s.degustateurs = s.degustateurs.filter((d) => !d.isDemo);
     s.settings.demoLoaded = false;
-    this.save();
+
+    const c = this._client;
+    await Promise.all([
+      demoDegIds.length ? c.from(TABLES.notes).delete().in("degustationId", demoDegIds) : null,
+      demoDegIds.length ? c.from(TABLES.degustations).delete().in("id", demoDegIds) : null,
+      demoChipIds.length ? c.from(TABLES.chips).delete().in("id", demoChipIds) : null,
+      demoSoireeIds.length ? c.from(TABLES.soirees).delete().in("id", demoSoireeIds) : null,
+      c.from(TABLES.degustateurs).delete().eq("isDemo", true),
+      c.from("settings").upsert({ id: "global", seuils: s.seuils, demoLoaded: false })
+    ].filter(Boolean));
+  },
+
+  async reset() {
+    const c = this._client;
+    const allIds = (arr) => arr.map((x) => x.id);
+    await Promise.all([
+      allIds(this._state.notes).length ? c.from(TABLES.notes).delete().in("id", allIds(this._state.notes)) : null,
+      allIds(this._state.degustations).length ? c.from(TABLES.degustations).delete().in("id", allIds(this._state.degustations)) : null,
+      allIds(this._state.chips).length ? c.from(TABLES.chips).delete().in("id", allIds(this._state.chips)) : null,
+      allIds(this._state.soirees).length ? c.from(TABLES.soirees).delete().in("id", allIds(this._state.soirees)) : null,
+      allIds(this._state.degustateurs).length ? c.from(TABLES.degustateurs).delete().in("id", allIds(this._state.degustateurs)) : null,
+      allIds(this._state.marques).length ? c.from(TABLES.marques).delete().in("id", allIds(this._state.marques)) : null,
+      allIds(this._state.saveursPerso).length ? c.from(TABLES.saveursPerso).delete().in("id", allIds(this._state.saveursPerso)) : null,
+      allIds(this._state.famillesPerso).length ? c.from(TABLES.famillesPerso).delete().in("id", allIds(this._state.famillesPerso)) : null,
+      c.from("settings").upsert({ id: "global", seuils: null, demoLoaded: false })
+    ].filter(Boolean));
+    this._state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    await this._seedDefaultTasters();
   }
 };
 
@@ -1442,12 +1503,12 @@ const Calc = {
    CHIP CLUB — demo.js
    Génère des données de démonstration : 4 dégustateurs,
    2 soirées, 10+ chips variées avec notes complètes.
+   Passe par les méthodes Store.add* pour que les données de démo
+   soient aussi partagées avec les autres dégustateurs (Supabase).
    ============================================================ */
 
 const Demo = {
   load() {
-    const s = Store.load();
-
     // Dégustateurs : on réutilise le club fondateur déjà présent (Benjamin,
     // Adam, Pierre Louis, Carla) plutôt que de créer des doublons de démo.
     const tasters = DEFAULT_TASTERS.map((n) => Store.addDegustateur(n.nom, n.avatarEmoji));
@@ -1467,43 +1528,34 @@ const Demo = {
       { marque: "Vico", nomCommercial: "Chips de Légumes", saveurId: "herbes-provence", familleId: "legumes", formeId: "fine-classique", cuissonId: "four", pays: "France", magasin: "Leclerc", prix: 2.19, poids: 100, piquant: 0 }
     ];
 
-    const chips = chipsData.map((c) => {
-      const chip = {
-        id: uid("chip"),
-        createdAt: new Date().toISOString(),
-        photo: null,
-        marque: c.marque,
-        nomCommercial: c.nomCommercial,
-        saveurId: c.saveurId,
-        saveurLabel: labelOf(SAVEURS, c.saveurId),
-        saveurFamilleId: (findById(SAVEURS, c.saveurId) || {}).familleId,
-        gamme: c.gamme || "",
-        paysOrigine: c.pays,
-        magasin: c.magasin,
-        prix: c.prix,
-        poids: c.poids,
-        familleId: c.familleId,
-        formeId: c.formeId,
-        cuissonId: c.cuissonId,
-        piquant: c.piquant,
-        isDemo: true
-      };
-      s.chips.push(chip);
-      return chip;
-    });
+    const chips = chipsData.map((c) => Store.addChip({
+      photo: null,
+      marque: c.marque,
+      nomCommercial: c.nomCommercial,
+      saveurId: c.saveurId,
+      saveurLabel: labelOf(SAVEURS, c.saveurId),
+      saveurFamilleId: (findById(SAVEURS, c.saveurId) || {}).familleId,
+      gamme: c.gamme || "",
+      paysOrigine: c.pays,
+      magasin: c.magasin,
+      prix: c.prix,
+      poids: c.poids,
+      familleId: c.familleId,
+      formeId: c.formeId,
+      cuissonId: c.cuissonId,
+      piquant: c.piquant,
+      isDemo: true
+    }));
 
     // 2 soirées
-    const soiree1 = {
-      id: uid("night"), nom: "Chip Night #01", date: daysAgo(21),
-      participantsIds: tasters.map((t) => t.id), mode: "classique",
-      createdAt: new Date().toISOString(), isDemo: true
-    };
-    const soiree2 = {
-      id: uid("night"), nom: "Chip Night #02", date: daysAgo(5),
-      participantsIds: tasters.map((t) => t.id), mode: "aveugle",
-      createdAt: new Date().toISOString(), isDemo: true
-    };
-    s.soirees.push(soiree1, soiree2);
+    const soiree1 = Store.addSoiree({
+      nom: "Chip Night #01", date: daysAgo(21),
+      participantsIds: tasters.map((t) => t.id), mode: "classique", isDemo: true
+    });
+    const soiree2 = Store.addSoiree({
+      nom: "Chip Night #02", date: daysAgo(5),
+      participantsIds: tasters.map((t) => t.id), mode: "aveugle", isDemo: true
+    });
 
     const contextesPool = ["apero", "film-serie", "biere", "soiree"];
     const commentaires = [
@@ -1524,11 +1576,7 @@ const Demo = {
     // Répartir les 12 chips sur les deux soirées (6 chacune)
     chips.forEach((chip, i) => {
       const soiree = i < 6 ? soiree1 : soiree2;
-      const deg = {
-        id: uid("tasting"), soireeId: soiree.id, chipId: chip.id,
-        revele: true, createdAt: new Date().toISOString()
-      };
-      s.degustations.push(deg);
+      const deg = Store.addDegustation({ soireeId: soiree.id, chipId: chip.id, revele: true });
 
       // notes de chaque dégustateur avec un peu de variabilité réaliste
       const base = 4.5 + Math.random() * 5; // profil de qualité de la chips
@@ -1546,22 +1594,19 @@ const Demo = {
         };
         const rachAvg = (criteres.gout + criteres.addictivite) / 2;
         const racheter = rachAvg >= 7 ? "oui" : rachAvg >= 5 ? "peut-etre" : "non";
-        s.notes.push({
-          id: uid("note"),
+        Store.addNote({
           degustationId: deg.id,
           degustateurId: t.id,
           criteres,
           racheter,
           survie: Math.min(5, Math.max(1, Math.round(6 - rachAvg / 2))),
           contextes: [contextesPool[Math.floor(Math.random() * contextesPool.length)]],
-          commentaire: ti === 0 ? commentaires[Math.floor(Math.random() * commentaires.length)] : "",
-          createdAt: new Date().toISOString()
+          commentaire: ti === 0 ? commentaires[Math.floor(Math.random() * commentaires.length)] : ""
         });
       });
     });
 
-    s.settings.demoLoaded = true;
-    Store.save();
+    Store.setDemoLoaded(true);
   }
 };
 
@@ -1586,8 +1631,33 @@ const escapeHTML = (s) => (s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 const App = {
   wizard: null, // état volatile de la dégustation en cours
 
-  init() {
-    Store.load();
+  async init() {
+    $app().innerHTML = `
+      <div class="boot-screen">
+        <div class="boot-emoji">🥔</div>
+        <div class="boot-title">CHIP CLUB</div>
+        <div class="boot-sub">Connexion au club…</div>
+      </div>
+    `;
+    try {
+      await Store.init(() => {
+        // rafraîchi par un·e autre dégustateur·rice : on ne réaffiche pas
+        // par-dessus une saisie en cours (formulaire / notation)
+        if (!this.wizard) this.route();
+      });
+    } catch (e) {
+      console.error("Erreur de connexion à la base partagée", e);
+      $app().innerHTML = `
+        <div class="boot-screen">
+          <div class="boot-emoji">⚠️</div>
+          <div class="boot-title">Connexion impossible</div>
+          <div class="boot-sub">Impossible de joindre la base de données partagée.</div>
+          <div class="boot-error">${escapeHTML(e && e.message ? e.message : String(e))}</div>
+          <button class="btn btn-secondary" style="margin-top:16px" onclick="location.reload()">Recharger</button>
+        </div>
+      `;
+      return;
+    }
     window.addEventListener("hashchange", () => this.route());
     this.route();
   },
@@ -2801,27 +2871,28 @@ const App = {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
-        Store.importJSON(ev.target.result);
-        alert("Import réussi !");
+        await Store.importJSON(ev.target.result);
+        alert("Import réussi ! Les données sont maintenant partagées avec toute la coloc.");
         this.route();
       } catch (err) {
+        console.error(err);
         alert("Fichier invalide.");
       }
     };
     reader.readAsText(file);
   },
-  resetApp() {
-    if (!confirm("Es-tu sûr de vouloir réinitialiser CHIP CLUB ? Toutes les données seront perdues définitivement.")) return;
-    if (!confirm("Dernière confirmation : toutes les chips, notes et soirées seront supprimées.")) return;
-    Store.reset();
+  async resetApp() {
+    if (!confirm("Es-tu sûr de vouloir réinitialiser CHIP CLUB ? Toutes les données seront perdues définitivement, pour tout le monde.")) return;
+    if (!confirm("Dernière confirmation : toutes les chips, notes et soirées seront supprimées pour tous les dégustateurs.")) return;
+    await Store.reset();
     location.hash = "#/";
     this.route();
   },
-  removeDemo() {
+  async removeDemo() {
     if (!confirm("Supprimer toutes les données de démonstration ?")) return;
-    Store.removeDemoData();
+    await Store.removeDemoData();
     this.route();
   },
   saveSeuils() {
